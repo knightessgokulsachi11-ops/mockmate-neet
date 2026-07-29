@@ -72,6 +72,7 @@ function PracticeBuilder() {
   const [pyqOnly, setPyqOnly] = useState(mode === "pyq");
   const [count, setCount] = useState(20);
   const [minutes, setMinutes] = useState(20);
+  const [timing, setTiming] = useState<ExamTiming>("timed");
 
   const scoped = useMemo(
     () => (subject === ANY ? questions : questions.filter((q) => q.subject === subject)),
