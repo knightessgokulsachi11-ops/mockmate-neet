@@ -102,8 +102,9 @@ function PracticeBuilder() {
     if (filtered.length === 0) return toast.error("No questions match these filters");
     const picked = shuffle(filtered).slice(0, Math.min(count, filtered.length));
     examStore.setSession({
-      title: MODE_TITLES[mode],
+      title: `${MODE_TITLES[mode]} — ${timing === "timed" ? "Timed" : "Untimed"}`,
       mode: "practice",
+      timing,
       durationSeconds: Math.max(1, minutes) * 60,
       questions: picked,
     });
@@ -118,8 +119,9 @@ function PracticeBuilder() {
     }
     if (picked.length === 0) return toast.error("Add questions to the bank first");
     examStore.setSession({
-      title: `Full Mock Test — ${picked.length} questions`,
+      title: `Full Mock Test (${timing === "timed" ? "Timed" : "Untimed"}) — ${picked.length} questions`,
       mode: "mock",
+      timing,
       durationSeconds: FULL_MOCK_MINUTES * 60,
       questions: picked,
     });
