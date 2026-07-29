@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_authenticated/practice")({
 });
 
 function PracticeBuilder() {
-  const { mode } = Route.useSearch();
+  const { mode } = Route.useSearch() as { mode: Mode };
   const navigate = useNavigate();
   const { data: questions = [], isLoading } = useQuestions();
 
