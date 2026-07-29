@@ -1,14 +1,19 @@
 import type { OptionKey, Question } from "./neet";
 
+export type ExamTiming = "timed" | "untimed";
+
 export interface ExamSession {
   title: string;
   mode: "practice" | "mock";
+  timing: ExamTiming;
   durationSeconds: number;
   questions: Question[];
 }
 
 export interface ExamSubmission {
   title: string;
+  timing?: ExamTiming;
+  autoSubmitted?: boolean;
   questions: Question[];
   answers: Record<string, OptionKey | null>;
   marked: Record<string, boolean>;
