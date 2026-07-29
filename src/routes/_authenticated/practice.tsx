@@ -314,3 +314,40 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+function TimingChoice({
+  value,
+  onChange,
+}: {
+  value: ExamTiming;
+  onChange: (v: ExamTiming) => void;
+}) {
+  const options: { key: ExamTiming; title: string; desc: string }[] = [
+    { key: "timed", title: "Timed Test", desc: "Countdown timer, auto-submit at 0:00." },
+    { key: "untimed", title: "Untimed Test", desc: "No timer; total & per-question time recorded." },
+  ];
+  return (
+    <div className="space-y-1.5">
+      <Label>Test mode</Label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={value === o.key}
+            onClick={() => onChange(o.key)}
+            className={
+              "rounded-sm border p-3 text-left transition-colors " +
+              (value === o.key
+                ? "border-primary bg-accent text-accent-foreground"
+                : "border-border hover:bg-muted/60")
+            }
+          >
+            <span className="block text-sm font-semibold">{o.title}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{o.desc}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
