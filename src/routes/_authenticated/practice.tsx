@@ -267,6 +267,8 @@ function PracticeBuilder() {
               </label>
             )}
 
+            <TimingChoice value={timing} onChange={setTiming} />
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Number of questions">
                 <Input
@@ -277,16 +279,19 @@ function PracticeBuilder() {
                   onChange={(e) => setCount(Number(e.target.value))}
                 />
               </Field>
-              <Field label="Timer (minutes)">
-                <Input
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={minutes}
-                  onChange={(e) => setMinutes(Number(e.target.value))}
-                />
-              </Field>
+              {timing === "timed" && (
+                <Field label="Timer (minutes)">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={300}
+                    value={minutes}
+                    onChange={(e) => setMinutes(Number(e.target.value))}
+                  />
+                </Field>
+              )}
             </div>
+
 
             <p className="text-sm text-muted-foreground">
               {filtered.length} matching question{filtered.length === 1 ? "" : "s"} available.
