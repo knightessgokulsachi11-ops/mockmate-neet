@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
+import { Route as AuthenticatedResultRouteImport } from './routes/_authenticated/result'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 
@@ -29,6 +31,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedResultRoute = AuthenticatedResultRouteImport.update({
+  id: '/result',
+  path: '/result',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
@@ -45,12 +57,16 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/exam': typeof AuthenticatedExamRoute
   '/practice': typeof AuthenticatedPracticeRoute
+  '/result': typeof AuthenticatedResultRoute
+  '/review': typeof AuthenticatedReviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/exam': typeof AuthenticatedExamRoute
   '/practice': typeof AuthenticatedPracticeRoute
+  '/result': typeof AuthenticatedResultRoute
+  '/review': typeof AuthenticatedReviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +75,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
+  '/_authenticated/result': typeof AuthenticatedResultRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/exam' | '/practice'
+  fullPaths: '/' | '/auth' | '/exam' | '/practice' | '/result' | '/review'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/exam' | '/practice'
+  to: '/' | '/auth' | '/exam' | '/practice' | '/result' | '/review'
   id:
     | '__root__'
     | '/'
@@ -72,6 +90,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/exam'
     | '/_authenticated/practice'
+    | '/_authenticated/result'
+    | '/_authenticated/review'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -103,6 +123,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/result': {
+      id: '/_authenticated/result'
+      path: '/result'
+      fullPath: '/result'
+      preLoaderRoute: typeof AuthenticatedResultRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/practice': {
       id: '/_authenticated/practice'
       path: '/practice'
@@ -123,11 +157,15 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
+  AuthenticatedResultRoute: typeof AuthenticatedResultRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExamRoute: AuthenticatedExamRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
+  AuthenticatedResultRoute: AuthenticatedResultRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
