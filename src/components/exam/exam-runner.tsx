@@ -200,8 +200,11 @@ export function ExamRunner({ session, candidate }: Props) {
           </div>
           <div className="flex items-center gap-2 rounded-sm bg-white/10 px-3 py-1.5">
             <Clock className="size-4" />
+            <span className="text-[11px] uppercase tracking-wider opacity-80">
+              {timed ? "Time left" : "Time taken"}
+            </span>
             <span className="font-mono text-base font-semibold tabular-nums">
-              {formatClock(remaining)}
+              {formatClock(timed ? remaining : elapsed)}
             </span>
           </div>
         </div>
@@ -349,7 +352,7 @@ export function ExamRunner({ session, candidate }: Props) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue test</AlertDialogCancel>
-            <AlertDialogAction onClick={submit}>Yes, submit</AlertDialogAction>
+            <AlertDialogAction onClick={() => submit(false)}>Yes, submit</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
