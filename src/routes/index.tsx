@@ -1,24 +1,144 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  Atom,
+  BookOpen,
+  Layers,
+  ListChecks,
+  SignalHigh,
+  Timer,
+  History,
+  ArrowRight,
+} from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { useSession } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "NEET 2027 CBT Practice — Home" },
+      {
+        name: "description",
+        content:
+          "Practise NEET 2027 subject-wise, chapter-wise, topic-wise, by difficulty, PYQs and full mock tests in an NTA-style CBT interface.",
+      },
+      { property: "og:title", content: "NEET 2027 CBT Practice — Home" },
+      {
+        property: "og:description",
+        content: "An NTA-style CBT practice environment for NEET 2027 preparation.",
+      },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const modes = [
+  {
+    to: "/practice",
+    search: { mode: "subject" as const },
+    icon: Atom,
+    title: "Subject-wise Practice",
+    desc: "Physics, Chemistry, Botany or Zoology.",
+  },
+  {
+    to: "/practice",
+    search: { mode: "chapter" as const },
+    icon: BookOpen,
+    title: "Chapter-wise Practice",
+    desc: "Target a single chapter at a time.",
+  },
+  {
+    to: "/practice",
+    search: { mode: "topic" as const },
+    icon: Layers,
+    title: "Major Topic-wise Practice",
+    desc: "Drill down into a specific major topic.",
+  },
+  {
+    to: "/practice",
+    search: { mode: "difficulty" as const },
+    icon: SignalHigh,
+    title: "Difficulty-wise Practice",
+    desc: "Easy, Medium or Hard question sets.",
+  },
+  {
+    to: "/practice",
+    search: { mode: "pyq" as const },
+    icon: History,
+    title: "PYQ Practice",
+    desc: "Previous year questions only.",
+  },
+  {
+    to: "/practice",
+    search: { mode: "mock" as const },
+    icon: ListChecks,
+    title: "Full Mock Test",
+    desc: "180 questions · 200 minutes · NEET pattern.",
+  },
+];
+
+function Home() {
+  const { session, loading } = useSession();
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="mx-auto max-w-6xl px-4 py-10">
+        <section className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Personal preparation console
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            NEET 2027 Computer Based Test Practice
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            Build practice sets from your own question bank and attempt them in an interface that
+            mirrors the official NTA NEET CBT screen — question palette, colour-coded statuses,
+            countdown timer and +4 / −1 marking.
+          </p>
+          {!loading && !session && (
+            <Button asChild className="mt-5">
+              <Link to="/auth">
+                Sign in to start <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          )}
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {modes.map((m) => (
+            <Link
+              key={m.title}
+              to={session ? m.to : "/auth"}
+              search={session ? m.search : undefined}
+              className="group exam-surface rounded-md p-5 transition-shadow hover:shadow-md"
+            >
+              <m.icon className="size-6 text-primary" />
+              <h2 className="mt-3 text-base font-semibold">{m.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{m.desc}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+                Start <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </section>
+
+        <section className="exam-surface mt-8 rounded-md p-5">
+          <div className="flex items-center gap-2">
+            <Timer className="size-5 text-primary" />
+            <h2 className="text-base font-semibold">Custom Practice</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Choose subject, chapter, major topic, difficulty, number of questions and your own
+            timer, then generate the test.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to={session ? "/practice" : "/auth"} search={session ? { mode: "custom" } : undefined}>
+              Build custom test
+            </Link>
+          </Button>
+        </section>
+      </main>
     </div>
   );
 }
