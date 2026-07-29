@@ -327,6 +327,9 @@ export function ExamRunner({ session, candidate }: Props) {
               >
                 Next
               </Button>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmOpen(true)}>
+                Submit
+              </Button>
             </div>
           </div>
         </main>
