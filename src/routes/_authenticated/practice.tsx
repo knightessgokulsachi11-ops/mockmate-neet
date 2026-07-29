@@ -156,9 +156,14 @@ function PracticeBuilder() {
               </div>
               <div>
                 <dt className="text-muted-foreground">Duration</dt>
-                <dd className="text-lg font-semibold">{FULL_MOCK_MINUTES} min</dd>
+                <dd className="text-lg font-semibold">
+                  {timing === "timed" ? `${FULL_MOCK_MINUTES} min` : "No limit"}
+                </dd>
               </div>
             </dl>
+            <div className="mt-5">
+              <TimingChoice value={timing} onChange={setTiming} />
+            </div>
             <Button className="mt-5 w-full" onClick={startMock}>
               Start Full Mock Test
             </Button>
