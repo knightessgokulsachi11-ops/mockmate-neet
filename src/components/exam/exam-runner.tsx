@@ -43,13 +43,17 @@ export function ExamRunner({ session, candidate }: Props) {
     questions.length ? { [questions[0].id]: true } : {},
   );
   const [selected, setSelected] = useState<OptionKey | null>(null);
-  const [remaining, setRemaining] = useState(session.durationSeconds);
+  const timed = session.timing !== "untimed";
+  const [elapsed, setElapsed] = useState(0);
+  const remaining = Math.max(0, session.durationSeconds - elapsed);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const timeSpent = useRef<Record<string, number>>({});
   const lastTick = useRef<number>(Date.now());
   const currentId = questions[current]?.id;
   const submittedRef = useRef(false);
+  const elapsedRef = useRef(0);
+  elapsedRef.current = elapsed;
 
   // per-question stopwatch
   useEffect(() => {
@@ -64,42 +68,42 @@ export function ExamRunner({ session, candidate }: Props) {
     timeSpent.current[currentId] = (timeSpent.current[currentId] ?? 0) + delta;
   }, [currentId]);
 
-  const submit = useCallback(() => {
-    if (submittedRef.current) return;
-    submittedRef.current = true;
-    accumulate();
-    const rounded: Record<string, number> = {};
-    for (const [k, v] of Object.entries(timeSpent.current)) rounded[k] = Math.round(v);
-    examStore.setResult({
-      title: session.title,
-      questions,
-      answers,
-      marked,
-      visited,
-      timePerQuestion: rounded,
-      totalTimeSeconds: session.durationSeconds - remaining,
-      submittedAt: new Date().toISOString(),
-    });
-    navigate({ to: "/result", replace: true });
-  }, [accumulate, answers, marked, navigate, questions, remaining, session, visited]);
+  const submit = useCallback(
+    (auto = false) => {
+      if (submittedRef.current) return;
+      submittedRef.current = true;
+      accumulate();
+      const rounded: Record<string, number> = {};
+      for (const [k, v] of Object.entries(timeSpent.current)) rounded[k] = Math.round(v);
+      examStore.setResult({
+        title: session.title,
+        timing: timed ? "timed" : "untimed",
+        autoSubmitted: auto,
+        questions,
+        answers,
+        marked,
+        visited,
+        timePerQuestion: rounded,
+        totalTimeSeconds: elapsedRef.current,
+        submittedAt: new Date().toISOString(),
+      });
+      navigate({ to: "/result", replace: true });
+    },
+    [accumulate, answers, marked, navigate, questions, session, timed, visited],
+  );
 
   useEffect(() => {
     const id = window.setInterval(() => {
       accumulate();
-      setRemaining((r) => {
-        if (r <= 1) {
-          window.clearInterval(id);
-          return 0;
-        }
-        return r - 1;
-      });
+      setElapsed((e) => e + 1);
     }, 1000);
     return () => window.clearInterval(id);
   }, [accumulate]);
 
   useEffect(() => {
-    if (remaining === 0) submit();
-  }, [remaining, submit]);
+    if (timed && remaining === 0) submit(true);
+  }, [timed, remaining, submit]);
+
 
   useEffect(() => {
     setSelected(answers[currentId] ?? null);
