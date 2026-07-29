@@ -11,7 +11,7 @@ import {
   shuffle,
   type Question,
 } from "@/lib/neet";
-import { examStore } from "@/lib/exam-store";
+import { examStore, type ExamTiming } from "@/lib/exam-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +72,7 @@ function PracticeBuilder() {
   const [pyqOnly, setPyqOnly] = useState(mode === "pyq");
   const [count, setCount] = useState(20);
   const [minutes, setMinutes] = useState(20);
+  const [timing, setTiming] = useState<ExamTiming>("timed");
 
   const scoped = useMemo(
     () => (subject === ANY ? questions : questions.filter((q) => q.subject === subject)),
@@ -102,8 +103,9 @@ function PracticeBuilder() {
     if (filtered.length === 0) return toast.error("No questions match these filters");
     const picked = shuffle(filtered).slice(0, Math.min(count, filtered.length));
     examStore.setSession({
-      title: MODE_TITLES[mode],
+      title: `${MODE_TITLES[mode]} — ${timing === "timed" ? "Timed" : "Untimed"}`,
       mode: "practice",
+      timing,
       durationSeconds: Math.max(1, minutes) * 60,
       questions: picked,
     });
@@ -118,8 +120,9 @@ function PracticeBuilder() {
     }
     if (picked.length === 0) return toast.error("Add questions to the bank first");
     examStore.setSession({
-      title: `Full Mock Test — ${picked.length} questions`,
+      title: `Full Mock Test (${timing === "timed" ? "Timed" : "Untimed"}) — ${picked.length} questions`,
       mode: "mock",
+      timing,
       durationSeconds: FULL_MOCK_MINUTES * 60,
       questions: picked,
     });
@@ -153,9 +156,14 @@ function PracticeBuilder() {
               </div>
               <div>
                 <dt className="text-muted-foreground">Duration</dt>
-                <dd className="text-lg font-semibold">{FULL_MOCK_MINUTES} min</dd>
+                <dd className="text-lg font-semibold">
+                  {timing === "timed" ? `${FULL_MOCK_MINUTES} min` : "No limit"}
+                </dd>
               </div>
             </dl>
+            <div className="mt-5">
+              <TimingChoice value={timing} onChange={setTiming} />
+            </div>
             <Button className="mt-5 w-full" onClick={startMock}>
               Start Full Mock Test
             </Button>
@@ -259,6 +267,8 @@ function PracticeBuilder() {
               </label>
             )}
 
+            <TimingChoice value={timing} onChange={setTiming} />
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Number of questions">
                 <Input
@@ -269,16 +279,19 @@ function PracticeBuilder() {
                   onChange={(e) => setCount(Number(e.target.value))}
                 />
               </Field>
-              <Field label="Timer (minutes)">
-                <Input
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={minutes}
-                  onChange={(e) => setMinutes(Number(e.target.value))}
-                />
-              </Field>
+              {timing === "timed" && (
+                <Field label="Timer (minutes)">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={300}
+                    value={minutes}
+                    onChange={(e) => setMinutes(Number(e.target.value))}
+                  />
+                </Field>
+              )}
             </div>
+
 
             <p className="text-sm text-muted-foreground">
               {filtered.length} matching question{filtered.length === 1 ? "" : "s"} available.
@@ -298,6 +311,43 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+function TimingChoice({
+  value,
+  onChange,
+}: {
+  value: ExamTiming;
+  onChange: (v: ExamTiming) => void;
+}) {
+  const options: { key: ExamTiming; title: string; desc: string }[] = [
+    { key: "timed", title: "Timed Test", desc: "Countdown timer, auto-submit at 0:00." },
+    { key: "untimed", title: "Untimed Test", desc: "No timer; total & per-question time recorded." },
+  ];
+  return (
+    <div className="space-y-1.5">
+      <Label>Test mode</Label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={value === o.key}
+            onClick={() => onChange(o.key)}
+            className={
+              "rounded-sm border p-3 text-left transition-colors " +
+              (value === o.key
+                ? "border-primary bg-accent text-accent-foreground"
+                : "border-border hover:bg-muted/60")
+            }
+          >
+            <span className="block text-sm font-semibold">{o.title}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{o.desc}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

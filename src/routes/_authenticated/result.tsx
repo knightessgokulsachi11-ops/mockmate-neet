@@ -80,7 +80,8 @@ function ResultPage() {
         <section className="exam-surface mt-4 rounded-md p-5">
           <h2 className="text-base font-semibold">Time</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Total time taken:{" "}
+            {result.timing === "untimed" ? "Untimed test" : "Timed test"}
+            {result.autoSubmitted ? " · auto-submitted when time ended" : ""} · Total time taken:{" "}
             <span className="font-mono font-semibold text-foreground">
               {formatClock(result.totalTimeSeconds)}
             </span>
