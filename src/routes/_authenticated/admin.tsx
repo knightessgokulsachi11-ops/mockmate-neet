@@ -421,10 +421,10 @@ function AdminPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {(
                 [
-                  ["option_a", "Option A"],
-                  ["option_b", "Option B"],
-                  ["option_c", "Option C"],
-                  ["option_d", "Option D"],
+                  ["option_a", "Option 1 (A)"],
+                  ["option_b", "Option 2 (B)"],
+                  ["option_c", "Option 3 (C)"],
+                  ["option_d", "Option 4 (D)"],
                 ] as const
               ).map(([key, label]) => (
                 <div key={key} className="space-y-1.5">
@@ -440,24 +440,29 @@ function AdminPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Correct answer</Label>
+              <Label>Correct option (1, 2, 3 or 4)</Label>
               <Select
                 value={form.correct_answer}
                 onValueChange={(v) =>
                   setForm({ ...form, correct_answer: v as Question["correct_answer"] })
                 }
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {OPTION_KEYS.map((k) => (
+                  {OPTION_KEYS.map((k, i) => (
                     <SelectItem key={k} value={k}>
-                      {k}
+                      Option {i + 1} ({k})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                This is the option marked correct in the CBT test screen.
+              </p>
+            </div>
+
             </div>
 
             <div className="space-y-1.5">
