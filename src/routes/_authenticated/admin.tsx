@@ -328,6 +328,43 @@ function AdminPage() {
             <DialogTitle>{editing ? "Edit question" : "Add question"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
+            <div className="rounded-md border border-dashed border-border bg-muted/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Auto-fill from PDF or screenshot</p>
+                  <p className="text-xs text-muted-foreground">
+                    Upload a NEET question image or PDF — text, options 1–4, correct option and
+                    explanation are filled automatically.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={extracting}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {extracting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  {extracting ? "Extracting…" : "Upload file"}
+                </Button>
+              </div>
+              {uploadName && (
+                <p className="mt-2 truncate text-xs text-muted-foreground">
+                  {extracting ? "Reading" : "Loaded"}: {uploadName}
+                </p>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/pdf,image/*"
+                className="hidden"
+                onChange={handleUpload}
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Subject</Label>
