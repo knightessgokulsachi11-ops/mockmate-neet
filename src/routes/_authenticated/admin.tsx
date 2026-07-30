@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Search } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
 import { useIsAdmin } from "@/hooks/use-auth";
 import { useDeleteQuestion, useQuestions, useSaveQuestion, type QuestionInput } from "@/lib/questions";
 import { DIFFICULTIES, OPTION_KEYS, SUBJECTS, type Question } from "@/lib/neet";
+import { extractQuestion } from "@/lib/extract-question.functions";
+import { fileToPageImages } from "@/lib/file-to-images";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+
 import {
   Select,
   SelectContent,
@@ -99,6 +103,53 @@ function AdminPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("__all__");
+  const [extracting, setExtracting] = useState(false);
+  const [uploadName, setUploadName] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const runExtract = useServerFn(extractQuestion);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setExtracting(true);
+    setUploadName(file.name);
+    try {
+      const images = await fileToPageImages(file);
+      const data = await runExtract({ data: { images } });
+      setForm((prev) => ({
+        ...prev,
+        question_text: data.question_text || prev.question_text,
+        option_a: data.option_a || prev.option_a,
+        option_b: data.option_b || prev.option_b,
+        option_c: data.option_c || prev.option_c,
+        option_d: data.option_d || prev.option_d,
+        explanation: data.explanation || prev.explanation,
+        chapter: data.chapter || prev.chapter,
+        major_topic: data.major_topic || prev.major_topic,
+        subject: (SUBJECTS as readonly string[]).includes(data.subject ?? "")
+          ? (data.subject as Question["subject"])
+          : prev.subject,
+        difficulty: (DIFFICULTIES as readonly string[]).includes(data.difficulty ?? "")
+          ? (data.difficulty as Question["difficulty"])
+          : prev.difficulty,
+        is_pyq: data.is_pyq || prev.is_pyq,
+        correct_answer: data.correct_option
+          ? OPTION_KEYS[data.correct_option - 1]
+          : prev.correct_answer,
+      }));
+      toast.success(
+        data.correct_option
+          ? `Extracted — correct option ${data.correct_option} (${OPTION_KEYS[data.correct_option - 1]})`
+          : "Extracted — please set the correct option",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not extract that file");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
 
   const filtered = useMemo(
     () =>
@@ -277,6 +328,43 @@ function AdminPage() {
             <DialogTitle>{editing ? "Edit question" : "Add question"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={submit} className="space-y-4">
+            <div className="rounded-md border border-dashed border-border bg-muted/40 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Auto-fill from PDF or screenshot</p>
+                  <p className="text-xs text-muted-foreground">
+                    Upload a NEET question image or PDF — text, options 1–4, correct option and
+                    explanation are filled automatically.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={extracting}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {extracting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  {extracting ? "Extracting…" : "Upload file"}
+                </Button>
+              </div>
+              {uploadName && (
+                <p className="mt-2 truncate text-xs text-muted-foreground">
+                  {extracting ? "Reading" : "Loaded"}: {uploadName}
+                </p>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/pdf,image/*"
+                className="hidden"
+                onChange={handleUpload}
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Subject</Label>
@@ -370,10 +458,10 @@ function AdminPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {(
                 [
-                  ["option_a", "Option A"],
-                  ["option_b", "Option B"],
-                  ["option_c", "Option C"],
-                  ["option_d", "Option D"],
+                  ["option_a", "Option 1 (A)"],
+                  ["option_b", "Option 2 (B)"],
+                  ["option_c", "Option 3 (C)"],
+                  ["option_d", "Option 4 (D)"],
                 ] as const
               ).map(([key, label]) => (
                 <div key={key} className="space-y-1.5">
@@ -389,25 +477,30 @@ function AdminPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Correct answer</Label>
+              <Label>Correct option (1, 2, 3 or 4)</Label>
               <Select
                 value={form.correct_answer}
                 onValueChange={(v) =>
                   setForm({ ...form, correct_answer: v as Question["correct_answer"] })
                 }
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {OPTION_KEYS.map((k) => (
+                  {OPTION_KEYS.map((k, i) => (
                     <SelectItem key={k} value={k}>
-                      {k}
+                      Option {i + 1} ({k})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                This is the option marked correct in the CBT test screen.
+              </p>
             </div>
+
+
 
             <div className="space-y-1.5">
               <Label htmlFor="exp">Explanation</Label>
