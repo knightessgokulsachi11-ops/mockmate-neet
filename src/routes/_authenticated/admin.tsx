@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Search, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
+import { BulkUploadPdf } from "@/components/admin/bulk-upload";
+
 import { useIsAdmin } from "@/hooks/use-auth";
 import { useDeleteQuestion, useQuestions, useSaveQuestion, type QuestionInput } from "@/lib/questions";
 import { DIFFICULTIES, OPTION_KEYS, SUBJECTS, type Question } from "@/lib/neet";
@@ -240,9 +242,13 @@ function AdminPage() {
               your devices.
             </p>
           </div>
-          <Button onClick={openNew}>
-            <Plus className="size-4" /> Add question
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <BulkUploadPdf />
+            <Button onClick={openNew}>
+              <Plus className="size-4" /> Add question
+            </Button>
+          </div>
+
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
