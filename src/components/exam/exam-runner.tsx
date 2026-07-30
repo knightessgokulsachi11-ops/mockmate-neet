@@ -284,31 +284,28 @@ export function ExamRunner({ session, candidate }: Props) {
                 className="max-h-72 rounded-sm border border-border object-contain"
               />
             )}
-            <div className="space-y-2">
-              {OPTION_KEYS.map((key) => (
+            <div className="divide-y divide-border rounded-sm border border-border">
+              {OPTION_KEYS.map((key, i) => (
                 <label
                   key={key}
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-sm border p-3 text-sm transition-colors",
-                    selected === key
-                      ? "border-primary bg-accent"
-                      : "border-border hover:bg-muted/60",
+                    "flex w-full cursor-pointer items-center gap-3 px-3 py-3.5 text-sm transition-colors",
+                    selected === key ? "bg-accent" : "hover:bg-muted/60",
                   )}
                 >
                   <input
                     type="radio"
                     name={`q-${q.id}`}
-                    className="mt-1 accent-[var(--primary)]"
+                    className="size-5 shrink-0 accent-[var(--primary)]"
                     checked={selected === key}
                     onChange={() => setSelected(key)}
                   />
-                  <span>
-                    <span className="mr-2 font-semibold">({key})</span>
-                    {optionText(q, key)}
-                  </span>
+                  <span className="w-6 shrink-0 text-base font-semibold">{i + 1})</span>
+                  <span className="leading-snug">{optionText(q, key)}</span>
                 </label>
               ))}
             </div>
+
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/40 p-3">
