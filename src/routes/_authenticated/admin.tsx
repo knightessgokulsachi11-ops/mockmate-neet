@@ -103,6 +103,53 @@ function AdminPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("__all__");
+  const [extracting, setExtracting] = useState(false);
+  const [uploadName, setUploadName] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const runExtract = useServerFn(extractQuestion);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setExtracting(true);
+    setUploadName(file.name);
+    try {
+      const images = await fileToPageImages(file);
+      const data = await runExtract({ data: { images } });
+      setForm((prev) => ({
+        ...prev,
+        question_text: data.question_text || prev.question_text,
+        option_a: data.option_a || prev.option_a,
+        option_b: data.option_b || prev.option_b,
+        option_c: data.option_c || prev.option_c,
+        option_d: data.option_d || prev.option_d,
+        explanation: data.explanation || prev.explanation,
+        chapter: data.chapter || prev.chapter,
+        major_topic: data.major_topic || prev.major_topic,
+        subject: (SUBJECTS as readonly string[]).includes(data.subject ?? "")
+          ? (data.subject as Question["subject"])
+          : prev.subject,
+        difficulty: (DIFFICULTIES as readonly string[]).includes(data.difficulty ?? "")
+          ? (data.difficulty as Question["difficulty"])
+          : prev.difficulty,
+        is_pyq: data.is_pyq || prev.is_pyq,
+        correct_answer: data.correct_option
+          ? OPTION_KEYS[data.correct_option - 1]
+          : prev.correct_answer,
+      }));
+      toast.success(
+        data.correct_option
+          ? `Extracted — correct option ${data.correct_option} (${OPTION_KEYS[data.correct_option - 1]})`
+          : "Extracted — please set the correct option",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not extract that file");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
 
   const filtered = useMemo(
     () =>
