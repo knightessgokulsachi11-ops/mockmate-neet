@@ -60,3 +60,14 @@ export async function fileToPageImages(file: File): Promise<string[]> {
   if (!file.type.startsWith("image/")) throw new Error("Upload a PDF or an image file.");
   return [await downscaleImage(await fileToDataUrl(file))];
 }
+
+/** Render every page of a PDF (or a single image) for bulk paper import. */
+export async function fileToAllPageImages(file: File, maxPages = 60): Promise<string[]> {
+  if (file.size > 20 * 1024 * 1024) throw new Error("File is too large (max 20 MB).");
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    return pdfToImages(file, maxPages);
+  }
+  if (!file.type.startsWith("image/")) throw new Error("Upload a PDF or an image file.");
+  return [await downscaleImage(await fileToDataUrl(file))];
+}
+

@@ -39,6 +39,22 @@ export function useSaveQuestion() {
   });
 }
 
+export function useBulkInsertQuestions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: QuestionInput[]) => {
+      if (values.length === 0) return 0;
+      for (let i = 0; i < values.length; i += 50) {
+        const chunk = values.slice(i, i + 50);
+        const { error } = await supabase.from("questions").insert(chunk as never);
+        if (error) throw error;
+      }
+      return values.length;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["questions"] }),
+  });
+}
+
 export function useDeleteQuestion() {
   const qc = useQueryClient();
   return useMutation({
@@ -49,6 +65,7 @@ export function useDeleteQuestion() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["questions"] }),
   });
 }
+
 
 export function uniqueValues(questions: Question[], key: "chapter" | "major_topic") {
   return Array.from(new Set(questions.map((q) => q[key]).filter(Boolean))).sort();
