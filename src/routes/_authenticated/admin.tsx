@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Pencil, Plus, Trash2, Search } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
 import { useIsAdmin } from "@/hooks/use-auth";
 import { useDeleteQuestion, useQuestions, useSaveQuestion, type QuestionInput } from "@/lib/questions";
 import { DIFFICULTIES, OPTION_KEYS, SUBJECTS, type Question } from "@/lib/neet";
+import { extractQuestion } from "@/lib/extract-question.functions";
+import { fileToPageImages } from "@/lib/file-to-images";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+
 import {
   Select,
   SelectContent,
