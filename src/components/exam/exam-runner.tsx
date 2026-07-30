@@ -190,26 +190,39 @@ export function ExamRunner({ session, candidate }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="bg-exam-header text-exam-header-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
-          <div>
-            <p className="text-sm font-semibold tracking-wide">
-              NEET (UG) 2027 — Computer Based Test
+      {/* NTA double-layered header grid */}
+      <header className="border-b-2 border-border bg-exam-header text-exam-header-foreground">
+        <div className="flex items-center justify-between gap-2 border-b border-white/20 px-3 py-2">
+          <p className="text-sm font-bold uppercase tracking-wide">NEET (UG) 2027</p>
+          <p className="truncate text-[11px] opacity-85">{session.title}</p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-border border-t border-border bg-exam-strip text-foreground sm:grid-cols-3">
+          <div className="px-3 py-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Candidate Name
             </p>
-            <p className="text-[11px] opacity-80">{session.title}</p>
+            <p className="truncate text-xs font-semibold">{candidate}</p>
           </div>
-          <div className="flex items-center gap-2 rounded-sm bg-white/10 px-3 py-1.5">
-            <Clock className="size-4" />
-            <span className="text-[11px] uppercase tracking-wider opacity-80">
-              {timed ? "Time left" : "Time taken"}
-            </span>
-            <span className="font-mono text-base font-semibold tabular-nums">
-              {formatClock(timed ? remaining : elapsed)}
+          <div className="px-3 py-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Subject
+            </p>
+            <p className="truncate text-xs font-semibold text-primary">{q.subject}</p>
+          </div>
+          <div className="col-span-2 flex items-center justify-between border-t border-border px-3 py-1.5 sm:col-span-1 sm:border-t-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {timed ? "Time Left" : "Time Taken"}
+            </p>
+            <span className="flex items-center gap-1.5 rounded-sm border border-border bg-card px-2 py-0.5">
+              <Clock className="size-3.5 text-primary" />
+              <span className="font-mono text-sm font-bold tabular-nums">
+                {formatClock(timed ? remaining : elapsed)}
+              </span>
             </span>
           </div>
         </div>
         {subjectsPresent.length > 1 && (
-          <div className="flex gap-1 overflow-x-auto bg-exam-strip px-2 pt-1 text-foreground">
+          <div className="flex gap-1 overflow-x-auto border-t border-border bg-exam-strip px-2 pt-1 text-foreground">
             {subjectsPresent.map((s: Subject) => {
               const firstIndex = questions.findIndex((item) => item.subject === s);
               const isActive = q.subject === s;
@@ -218,10 +231,10 @@ export function ExamRunner({ session, candidate }: Props) {
                   key={s}
                   onClick={() => goTo(firstIndex)}
                   className={cn(
-                    "shrink-0 rounded-t-sm px-4 py-1.5 text-sm font-medium",
+                    "shrink-0 rounded-t-sm border border-b-0 border-border px-4 py-1.5 text-sm font-medium",
                     isActive
                       ? "bg-exam-panel text-primary"
-                      : "text-secondary-foreground hover:bg-white/40",
+                      : "bg-muted text-secondary-foreground hover:bg-white/40",
                   )}
                 >
                   {s}
@@ -231,6 +244,7 @@ export function ExamRunner({ session, candidate }: Props) {
           </div>
         )}
       </header>
+
 
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 p-4 lg:flex-row">
         <main className="exam-surface flex flex-1 flex-col rounded-sm">
