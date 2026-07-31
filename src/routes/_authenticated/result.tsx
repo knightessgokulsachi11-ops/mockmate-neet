@@ -22,10 +22,18 @@ export const Route = createFileRoute("/_authenticated/result")({
 function ResultPage() {
   const [result, setResult] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
+  const saveAttempt = useSaveAttempt();
+  const savedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setResult(examStore.getResult());
+    const stored = examStore.getResult();
+    setResult(stored);
     setReady(true);
+    if (stored && savedRef.current !== stored.submittedAt) {
+      savedRef.current = stored.submittedAt;
+      saveAttempt.mutate(stored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!ready) return null;
