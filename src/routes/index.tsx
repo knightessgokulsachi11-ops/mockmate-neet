@@ -96,14 +96,24 @@ function Home() {
             mirrors the official NTA NEET CBT screen — question palette, colour-coded statuses,
             countdown timer and +4 / −1 marking.
           </p>
-          {!loading && !session && (
-            <Button asChild className="mt-5">
-              <Link to="/auth">
-                Sign in to start <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {!loading && !session && (
+              <Button asChild>
+                <Link to="/auth">
+                  Sign in to start <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            )}
+            {!loading && session && (
+              <Button asChild size="lg">
+                <Link to="/history">
+                  <History className="size-4" /> My Test History
+                </Link>
+              </Button>
+            )}
+          </div>
         </section>
+
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {modes.map((m) => (
