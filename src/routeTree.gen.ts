@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedResultRouteImport } from './routes/_authenticated/result'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
+import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
@@ -53,6 +54,11 @@ const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
   path: '/practice',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExamRoute = AuthenticatedExamRouteImport.update({
   id: '/exam',
   path: '/exam',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/result': typeof AuthenticatedResultRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/result': typeof AuthenticatedResultRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
+  '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
   '/_authenticated/result': typeof AuthenticatedResultRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/exam'
+    | '/history'
     | '/practice'
     | '/result'
     | '/review'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/exam'
+    | '/history'
     | '/practice'
     | '/result'
     | '/review'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/exam'
+    | '/_authenticated/history'
     | '/_authenticated/practice'
     | '/_authenticated/result'
     | '/_authenticated/review'
@@ -188,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPracticeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/history': {
+      id: '/_authenticated/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/exam': {
       id: '/_authenticated/exam'
       path: '/exam'
@@ -208,6 +227,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
+  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
   AuthenticatedResultRoute: typeof AuthenticatedResultRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
@@ -216,6 +236,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedExamRoute: AuthenticatedExamRoute,
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
   AuthenticatedResultRoute: AuthenticatedResultRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,

@@ -96,14 +96,24 @@ function Home() {
             mirrors the official NTA NEET CBT screen — question palette, colour-coded statuses,
             countdown timer and +4 / −1 marking.
           </p>
-          {!loading && !session && (
-            <Button asChild className="mt-5">
-              <Link to="/auth">
-                Sign in to start <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {!loading && !session && (
+              <Button asChild>
+                <Link to="/auth">
+                  Sign in to start <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            )}
+            {!loading && session && (
+              <Button asChild size="lg">
+                <Link to="/history">
+                  <History className="size-4" /> My Test History
+                </Link>
+              </Button>
+            )}
+          </div>
         </section>
+
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {modes.map((m) => (
@@ -136,6 +146,19 @@ function Home() {
             <Link to={session ? "/practice" : "/auth"} search={session ? { mode: "custom" } : undefined}>
               Build custom test
             </Link>
+          </Button>
+        </section>
+
+        <section className="exam-surface mt-4 rounded-md p-5">
+          <div className="flex items-center gap-2">
+            <History className="size-5 text-primary" />
+            <h2 className="text-base font-semibold">My Test History</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            View all your past test scores, accuracy, time taken and attempt dates.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to={session ? "/history" : "/auth"}>View test history</Link>
           </Button>
         </section>
       </main>

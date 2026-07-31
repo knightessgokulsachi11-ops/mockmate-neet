@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, XCircle, MinusCircle, Trophy } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, summarize, type ExamSubmission } from "@/lib/exam-store";
+import { useSaveAttempt } from "@/lib/attempts";
 import { formatClock, formatDuration } from "@/lib/neet";
 import { Button } from "@/components/ui/button";
 
@@ -21,10 +22,18 @@ export const Route = createFileRoute("/_authenticated/result")({
 function ResultPage() {
   const [result, setResult] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
+  const saveAttempt = useSaveAttempt();
+  const savedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setResult(examStore.getResult());
+    const stored = examStore.getResult();
+    setResult(stored);
     setReady(true);
+    if (stored && savedRef.current !== stored.submittedAt) {
+      savedRef.current = stored.submittedAt;
+      saveAttempt.mutate(stored);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!ready) return null;

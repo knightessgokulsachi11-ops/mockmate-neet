@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, LogOut, ShieldCheck } from "lucide-react";
+import { GraduationCap, History as HistoryIcon, LogOut, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useSession } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,11 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1">
           {session ? (
             <>
+              <Button asChild variant="ghost" size="sm" className="hover:bg-white/10">
+                <Link to="/history">
+                  <HistoryIcon className="size-4" /> History
+                </Link>
+              </Button>
               {isAdmin && (
                 <Button asChild variant="ghost" size="sm" className="hover:bg-white/10">
                   <Link to="/admin">
