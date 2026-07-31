@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, type ExamSubmission } from "@/lib/exam-store";
 import { OPTION_KEYS, formatDuration, optionText } from "@/lib/neet";
+import { MathText } from "@/components/exam/math-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +89,9 @@ function ReviewPage() {
           </header>
 
           <div className="space-y-4 p-4">
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{q.question_text}</p>
+            <MathText as="p" className="text-[15px] leading-relaxed">
+              {q.question_text}
+            </MathText>
             {q.image_url && (
               <img
                 src={q.image_url}
@@ -115,7 +118,7 @@ function ReviewPage() {
                     )}
                   >
                     <span className="font-semibold">({key})</span>
-                    <span className="flex-1">{optionText(q, key)}</span>
+                    <MathText className="flex-1">{optionText(q, key)}</MathText>
                     {isYours && <span className="text-xs text-muted-foreground">Your answer</span>}
                     {isCorrect && <span className="text-xs font-medium text-success">Correct</span>}
                   </li>
@@ -142,9 +145,9 @@ function ReviewPage() {
 
             <div>
               <h2 className="text-sm font-semibold">Explanation</h2>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+              <MathText as="p" className="mt-1 text-sm text-muted-foreground">
                 {q.explanation || "No explanation provided."}
-              </p>
+              </MathText>
             </div>
           </div>
         </article>
