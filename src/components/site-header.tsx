@@ -33,7 +33,7 @@ export function SiteHeader() {
             <>
               <Button asChild variant="ghost" size="sm" className="hover:bg-white/10">
                 <Link to="/history">
-                  <History className="size-4" /> History
+                  <HistoryIcon className="size-4" /> History
                 </Link>
               </Button>
               {isAdmin && (
