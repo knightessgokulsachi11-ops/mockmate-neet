@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, type ExamSubmission } from "@/lib/exam-store";
 import { OPTION_KEYS, formatDuration, optionText } from "@/lib/neet";
 import { MathText } from "@/components/exam/math-text";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/review")({
@@ -29,11 +31,23 @@ function ReviewPage() {
   const [result, setResult] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
   const [i, setI] = useState(0);
+  const [incorrectOnly, setIncorrectOnly] = useState(false);
 
   useEffect(() => {
     setResult(examStore.getResult());
     setReady(true);
   }, []);
+
+  const wrongIndices = useMemo(() => {
+    if (!result) return [];
+    return result.questions
+      .map((item, idx) => ({ item, idx }))
+      .filter(({ item }) => {
+        const a = result.answers[item.id] ?? null;
+        return a !== null && a !== item.correct_answer;
+      })
+      .map(({ idx }) => idx);
+  }, [result]);
 
   if (!ready) return null;
 
@@ -51,7 +65,43 @@ function ReviewPage() {
     );
   }
 
-  const q = result.questions[i];
+  const list = incorrectOnly ? wrongIndices : result.questions.map((_, idx) => idx);
+  const pos = Math.max(0, list.indexOf(i));
+  const activeIndex = list[pos];
+
+  const filterToggle = (
+    <div className="flex items-center gap-2 rounded-sm border border-border bg-muted/50 px-3 py-2">
+      <Switch
+        id="incorrect-only"
+        checked={incorrectOnly}
+        onCheckedChange={(v) => {
+          setIncorrectOnly(v);
+          if (v && wrongIndices.length && !wrongIndices.includes(i)) setI(wrongIndices[0]);
+        }}
+      />
+      <Label htmlFor="incorrect-only" className="cursor-pointer text-sm font-medium">
+        Show Incorrect Questions Only
+      </Label>
+      <span className="text-xs text-muted-foreground">({wrongIndices.length})</span>
+    </div>
+  );
+
+  if (incorrectOnly && wrongIndices.length === 0) {
+    return (
+      <div className="min-h-screen">
+        <SiteHeader />
+        <main className="mx-auto max-w-4xl px-4 py-8">
+          <h1 className="text-2xl font-bold tracking-tight">Answer Review</h1>
+          <div className="mt-4">{filterToggle}</div>
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            No incorrect answers in this test — every attempted question was correct.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  const q = result.questions[activeIndex];
   const answer = result.answers[q.id] ?? null;
   const verdict = !answer ? "Skipped" : answer === q.correct_answer ? "Correct" : "Wrong";
 
@@ -62,13 +112,16 @@ function ReviewPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-tight">Answer Review</h1>
           <p className="text-sm text-muted-foreground">
-            Question {i + 1} of {result.questions.length}
+            {incorrectOnly ? "Incorrect" : "Question"} {pos + 1} of {list.length}
           </p>
         </div>
 
+        <div className="mt-3">{filterToggle}</div>
+
+
         <article className="exam-surface mt-4 rounded-md">
           <header className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/60 px-4 py-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">Q{i + 1}</span>
+            <span className="font-semibold text-foreground">Q{activeIndex + 1}</span>
             <span>{q.subject}</span>
             <span>· {q.chapter}</span>
             {q.major_topic && <span>· {q.major_topic}</span>}
@@ -153,13 +206,17 @@ function ReviewPage() {
         </article>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={i === 0}>
+          <Button
+            variant="outline"
+            onClick={() => setI(list[Math.max(0, pos - 1)])}
+            disabled={pos === 0}
+          >
             Previous
           </Button>
           <Button
             variant="outline"
-            onClick={() => setI((n) => Math.min(result.questions.length - 1, n + 1))}
-            disabled={i === result.questions.length - 1}
+            onClick={() => setI(list[Math.min(list.length - 1, pos + 1)])}
+            disabled={pos === list.length - 1}
           >
             Next
           </Button>
