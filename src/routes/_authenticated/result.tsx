@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, XCircle, MinusCircle, Trophy } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, summarize, type ExamSubmission } from "@/lib/exam-store";
+import { useSaveAttempt } from "@/lib/attempts";
 import { formatClock, formatDuration } from "@/lib/neet";
 import { Button } from "@/components/ui/button";
 
