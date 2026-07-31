@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, XCircle, MinusCircle, Trophy } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
