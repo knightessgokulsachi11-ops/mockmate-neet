@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { PaletteButton, StatusLegend } from "./palette";
+import { MathText } from "./math-text";
 
 interface Props {
   session: ExamSession;
@@ -275,7 +276,9 @@ export function ExamRunner({ session, candidate }: Props) {
           </div>
 
           <div className="flex-1 space-y-4 p-4">
-            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{q.question_text}</p>
+            <MathText as="p" className="text-[15px] leading-relaxed">
+              {q.question_text}
+            </MathText>
             {q.image_url && (
               <img
                 src={q.image_url}
@@ -301,7 +304,7 @@ export function ExamRunner({ session, candidate }: Props) {
                     onChange={() => setSelected(key)}
                   />
                   <span className="w-6 shrink-0 text-base font-semibold">{i + 1})</span>
-                  <span className="leading-snug">{optionText(q, key)}</span>
+                  <MathText className="leading-snug">{optionText(q, key)}</MathText>
                 </label>
               ))}
             </div>
