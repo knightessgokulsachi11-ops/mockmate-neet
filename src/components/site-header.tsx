@@ -31,6 +31,11 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1">
           {session ? (
             <>
+              <Button asChild variant="ghost" size="sm" className="hover:bg-white/10">
+                <Link to="/history">
+                  <History className="size-4" /> History
+                </Link>
+              </Button>
               {isAdmin && (
                 <Button asChild variant="ghost" size="sm" className="hover:bg-white/10">
                   <Link to="/admin">
