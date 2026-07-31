@@ -74,6 +74,60 @@ export type Database = {
         }
         Relationships: []
       }
+      test_attempts: {
+        Row: {
+          auto_submitted: boolean
+          correct: number
+          created_at: string
+          id: string
+          max_score: number
+          percentage: number
+          score: number
+          submitted_at: string
+          timing: string
+          title: string
+          total_questions: number
+          total_time_seconds: number
+          unanswered: number
+          user_id: string
+          wrong: number
+        }
+        Insert: {
+          auto_submitted?: boolean
+          correct: number
+          created_at?: string
+          id?: string
+          max_score: number
+          percentage: number
+          score: number
+          submitted_at?: string
+          timing?: string
+          title: string
+          total_questions: number
+          total_time_seconds: number
+          unanswered: number
+          user_id: string
+          wrong: number
+        }
+        Update: {
+          auto_submitted?: boolean
+          correct?: number
+          created_at?: string
+          id?: string
+          max_score?: number
+          percentage?: number
+          score?: number
+          submitted_at?: string
+          timing?: string
+          title?: string
+          total_questions?: number
+          total_time_seconds?: number
+          unanswered?: number
+          user_id?: string
+          wrong?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
