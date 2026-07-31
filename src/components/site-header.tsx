@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, LogOut, ShieldCheck } from "lucide-react";
+import { GraduationCap, History as HistoryIcon, LogOut, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useSession } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
