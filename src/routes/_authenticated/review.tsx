@@ -121,7 +121,7 @@ function ReviewPage() {
 
         <article className="exam-surface mt-4 rounded-md">
           <header className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/60 px-4 py-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">Q{i + 1}</span>
+            <span className="font-semibold text-foreground">Q{activeIndex + 1}</span>
             <span>{q.subject}</span>
             <span>· {q.chapter}</span>
             {q.major_topic && <span>· {q.major_topic}</span>}
@@ -206,13 +206,17 @@ function ReviewPage() {
         </article>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setI((n) => Math.max(0, n - 1))} disabled={i === 0}>
+          <Button
+            variant="outline"
+            onClick={() => setI(list[Math.max(0, pos - 1)])}
+            disabled={pos === 0}
+          >
             Previous
           </Button>
           <Button
             variant="outline"
-            onClick={() => setI((n) => Math.min(result.questions.length - 1, n + 1))}
-            disabled={i === result.questions.length - 1}
+            onClick={() => setI(list[Math.min(list.length - 1, pos + 1)])}
+            disabled={pos === list.length - 1}
           >
             Next
           </Button>
