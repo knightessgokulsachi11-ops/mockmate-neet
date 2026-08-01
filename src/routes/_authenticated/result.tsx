@@ -127,7 +127,9 @@ function ResultPage() {
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Button asChild>
-            <Link to="/review">Review answers</Link>
+            <Link to="/review" search={{ attempt: undefined }}>
+              Review answers
+            </Link>
           </Button>
           <Button asChild variant="outline">
             <Link to="/">Back to home</Link>
