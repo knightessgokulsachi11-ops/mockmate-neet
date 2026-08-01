@@ -68,62 +68,73 @@ function HistoryPage() {
               />
             </section>
 
-            <div className="exam-surface mt-4 overflow-x-auto rounded-md">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-muted text-left">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Date</th>
-                    <th className="px-3 py-2 font-medium">Test</th>
-                    <th className="px-3 py-2 text-right font-medium">Score</th>
-                    <th className="px-3 py-2 text-right font-medium">%</th>
-                    <th className="px-3 py-2 text-right font-medium">C / W / S</th>
-                    <th className="px-3 py-2 text-right font-medium">Time</th>
-                    <th className="px-3 py-2" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {attempts.map((a) => (
-                    <tr key={a.id} className="border-t border-border">
-                      <td className="whitespace-nowrap px-3 py-2">
+            <div className="mt-4 space-y-3">
+              {attempts.map((a) => (
+                <article key={a.id} className="exam-surface rounded-md p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-semibold">{a.title}</h2>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(a.submitted_at).toLocaleString("en-IN", {
                           dateStyle: "medium",
                           timeStyle: "short",
-                        })}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="font-medium">{a.title}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {a.timing === "untimed" ? "Untimed" : "Timed"}
-                          {a.auto_submitted ? " · auto-submitted" : ""}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono font-semibold">
-                        {a.score} / {a.max_score}
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono">{Number(a.percentage)}%</td>
-                      <td className="px-3 py-2 text-right font-mono">
-                        <span className="text-success">{a.correct}</span> /{" "}
-                        <span className="text-destructive">{a.wrong}</span> /{" "}
-                        <span className="text-muted-foreground">{a.unanswered}</span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono">
+                        })}{" "}
+                        · {a.timing === "untimed" ? "Untimed" : "Timed"}
+                        {a.auto_submitted ? " · auto-submitted" : ""} ·{" "}
                         {formatClock(a.total_time_seconds)}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => del.mutate(a.id)}
-                          aria-label="Delete attempt"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-xl font-bold">
+                        {a.score} / {a.max_score}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        NEET score (+4 / −1) · {Number(a.percentage)}%
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-sm bg-muted px-2 py-1 font-mono">
+                      <span className="text-success">{a.correct}</span> /{" "}
+                      <span className="text-destructive">{a.wrong}</span> /{" "}
+                      <span className="text-muted-foreground">{a.unanswered}</span> of{" "}
+                      {a.total_questions}
+                    </span>
+                    {(a.subject_breakdown ?? []).map((s) => (
+                      <span
+                        key={s.subject}
+                        className="rounded-sm border border-border px-2 py-1 font-mono"
+                      >
+                        <span className="font-sans font-medium">{s.subject}</span> {s.score}/
+                        {s.maxScore}
+                        <span className="ml-1 text-muted-foreground">
+                          ({s.correct}✓ {s.wrong}✗ {s.unanswered}–)
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/review" search={{ attempt: a.id }}>
+                        Review Test
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => del.mutate(a.id)}
+                      aria-label="Delete attempt"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </article>
+              ))}
             </div>
+
           </>
         )}
       </main>
