@@ -232,8 +232,13 @@ function ReviewPage() {
             Next
           </Button>
           <Button asChild variant="ghost" className="ml-auto">
-            <Link to="/result">Back to result</Link>
+            {attempt ? (
+              <Link to="/history">Back to history</Link>
+            ) : (
+              <Link to="/result">Back to result</Link>
+            )}
           </Button>
+
         </div>
       </main>
     </div>
