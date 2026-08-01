@@ -60,7 +60,7 @@ function ReviewPage() {
       .map(({ idx }) => idx);
   }, [result]);
 
-  if (!ready) return null;
+  if (loading) return null;
 
   if (!result) {
     return (
