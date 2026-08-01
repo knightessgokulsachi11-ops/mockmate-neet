@@ -83,6 +83,8 @@ export type Database = {
           max_score: number
           percentage: number
           score: number
+          subject_breakdown: Json
+          submission: Json | null
           submitted_at: string
           timing: string
           title: string
@@ -100,6 +102,8 @@ export type Database = {
           max_score: number
           percentage: number
           score: number
+          subject_breakdown?: Json
+          submission?: Json | null
           submitted_at?: string
           timing?: string
           title: string
@@ -117,6 +121,8 @@ export type Database = {
           max_score?: number
           percentage?: number
           score?: number
+          subject_breakdown?: Json
+          submission?: Json | null
           submitted_at?: string
           timing?: string
           title?: string

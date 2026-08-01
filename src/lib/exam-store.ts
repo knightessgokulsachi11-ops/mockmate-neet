@@ -82,3 +82,32 @@ export function summarize(result: ExamSubmission): ScoreSummary {
     percentage: maxScore > 0 ? Math.round((score / maxScore) * 10000) / 100 : 0,
   };
 }
+
+export interface SubjectScore {
+  subject: string;
+  total: number;
+  correct: number;
+  wrong: number;
+  unanswered: number;
+  score: number;
+  maxScore: number;
+}
+
+export function summarizeBySubject(result: ExamSubmission): SubjectScore[] {
+  const map = new Map<string, SubjectScore>();
+  for (const q of result.questions) {
+    const key = q.subject;
+    const entry =
+      map.get(key) ??
+      { subject: key, total: 0, correct: 0, wrong: 0, unanswered: 0, score: 0, maxScore: 0 };
+    entry.total++;
+    entry.maxScore += 4;
+    const a = result.answers[q.id] ?? null;
+    if (!a) entry.unanswered++;
+    else if (a === q.correct_answer) entry.correct++;
+    else entry.wrong++;
+    entry.score = entry.correct * 4 - entry.wrong;
+    map.set(key, entry);
+  }
+  return [...map.values()];
+}

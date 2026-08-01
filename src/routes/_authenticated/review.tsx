@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, type ExamSubmission } from "@/lib/exam-store";
+import { useAttempt } from "@/lib/attempts";
 import { OPTION_KEYS, formatDuration, optionText } from "@/lib/neet";
 import { MathText } from "@/components/exam/math-text";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/review")({
   head: () => ({
@@ -24,19 +26,28 @@ export const Route = createFileRoute("/_authenticated/review")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    attempt: typeof search.attempt === "string" ? search.attempt : undefined,
+  }),
   component: ReviewPage,
 });
 
 function ReviewPage() {
-  const [result, setResult] = useState<ExamSubmission | null>(null);
+  const { attempt } = Route.useSearch();
+  const attemptQuery = useAttempt(attempt);
+  const [stored, setStored] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
   const [i, setI] = useState(0);
   const [incorrectOnly, setIncorrectOnly] = useState(false);
 
   useEffect(() => {
-    setResult(examStore.getResult());
+    setStored(examStore.getResult());
     setReady(true);
   }, []);
+
+  const result = attempt ? (attemptQuery.data?.submission ?? null) : stored;
+  const loading = attempt ? attemptQuery.isLoading : !ready;
+
 
   const wrongIndices = useMemo(() => {
     if (!result) return [];
@@ -49,7 +60,7 @@ function ReviewPage() {
       .map(({ idx }) => idx);
   }, [result]);
 
-  if (!ready) return null;
+  if (loading) return null;
 
   if (!result) {
     return (
@@ -221,8 +232,13 @@ function ReviewPage() {
             Next
           </Button>
           <Button asChild variant="ghost" className="ml-auto">
-            <Link to="/result">Back to result</Link>
+            {attempt ? (
+              <Link to="/history">Back to history</Link>
+            ) : (
+              <Link to="/result">Back to result</Link>
+            )}
           </Button>
+
         </div>
       </main>
     </div>
