@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { summarize, type ExamSubmission } from "./exam-store";
+import {
+  summarize,
+  summarizeBySubject,
+  type ExamSubmission,
+  type SubjectScore,
+} from "./exam-store";
 
 export interface TestAttempt {
   id: string;
@@ -16,6 +21,8 @@ export interface TestAttempt {
   percentage: number;
   total_time_seconds: number;
   submitted_at: string;
+  subject_breakdown: SubjectScore[];
+  submission: ExamSubmission | null;
 }
 
 export function useTestHistory() {
@@ -24,10 +31,39 @@ export function useTestHistory() {
     queryFn: async (): Promise<TestAttempt[]> => {
       const { data, error } = await supabase
         .from("test_attempts")
-        .select("*")
+        .select(
+          "id,title,timing,auto_submitted,total_questions,correct,wrong,unanswered,score,max_score,percentage,total_time_seconds,submitted_at,subject_breakdown",
+        )
         .order("submitted_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as TestAttempt[];
+      return (data ?? []).map((row) => ({
+        ...(row as unknown as TestAttempt),
+        subject_breakdown: ((row as { subject_breakdown?: unknown }).subject_breakdown ??
+          []) as SubjectScore[],
+        submission: null,
+      }));
+    },
+  });
+}
+
+export function useAttempt(id: string | undefined) {
+  return useQuery({
+    queryKey: ["test-attempt", id],
+    enabled: Boolean(id),
+    queryFn: async (): Promise<TestAttempt | null> => {
+      const { data, error } = await supabase
+        .from("test_attempts")
+        .select("*")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const row = data as unknown as TestAttempt;
+      return {
+        ...row,
+        subject_breakdown: (row.subject_breakdown ?? []) as SubjectScore[],
+        submission: (row.submission ?? null) as ExamSubmission | null,
+      };
     },
   });
 }
@@ -55,6 +91,8 @@ export function useSaveAttempt() {
           percentage: s.percentage,
           total_time_seconds: Math.round(result.totalTimeSeconds),
           submitted_at: result.submittedAt,
+          subject_breakdown: summarizeBySubject(result),
+          submission: result,
         } as never,
         { onConflict: "user_id,submitted_at", ignoreDuplicates: true },
       );
