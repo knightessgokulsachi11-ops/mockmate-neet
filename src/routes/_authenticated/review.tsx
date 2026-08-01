@@ -26,19 +26,28 @@ export const Route = createFileRoute("/_authenticated/review")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    attempt: typeof search.attempt === "string" ? search.attempt : undefined,
+  }),
   component: ReviewPage,
 });
 
 function ReviewPage() {
-  const [result, setResult] = useState<ExamSubmission | null>(null);
+  const { attempt } = Route.useSearch();
+  const attemptQuery = useAttempt(attempt);
+  const [stored, setStored] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
   const [i, setI] = useState(0);
   const [incorrectOnly, setIncorrectOnly] = useState(false);
 
   useEffect(() => {
-    setResult(examStore.getResult());
+    setStored(examStore.getResult());
     setReady(true);
   }, []);
+
+  const result = attempt ? (attemptQuery.data?.submission ?? null) : stored;
+  const loading = attempt ? attemptQuery.isLoading : !ready;
+
 
   const wrongIndices = useMemo(() => {
     if (!result) return [];
