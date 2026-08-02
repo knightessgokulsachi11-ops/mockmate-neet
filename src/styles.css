@@ -43,6 +43,12 @@
   --color-exam-header-foreground: var(--exam-header-foreground);
   --color-exam-panel: var(--exam-panel);
   --color-exam-strip: var(--exam-strip);
+  --color-nta-save: var(--nta-save);
+  --color-nta-save-foreground: var(--nta-save-foreground);
+  --color-nta-mark: var(--nta-mark);
+  --color-nta-mark-foreground: var(--nta-mark-foreground);
+  --color-nta-review: var(--nta-review);
+  --color-nta-review-foreground: var(--nta-review-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
