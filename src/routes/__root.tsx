@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#2b3d6b" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "LEO PARDUS NEUROMEDICO" },
+      { name: "apple-mobile-web-app-title", content: "LEO PARDUS" },
       { name: "application-name", content: "LEO PARDUS NEUROMEDICO" },
     ],
     links: [
