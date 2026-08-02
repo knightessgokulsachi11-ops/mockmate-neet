@@ -24,7 +24,7 @@ export function SiteHeader() {
         <Link to="/" className="flex items-center gap-2">
           <GraduationCap className="size-6" />
           <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-wide">NEET 2027 CBT Practice</p>
+            <p className="text-sm font-semibold tracking-wide">LEO PARDUS NEUROMEDICO</p>
             <p className="text-[11px] opacity-75">National Testing Agency style interface</p>
           </div>
         </Link>

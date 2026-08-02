@@ -79,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NEET 2027 CBT Practice" },
+      { title: "LEO PARDUS NEUROMEDICO" },
       {
         name: "description",
         content: "Personal NEET 2027 CBT practice platform with an NTA-style exam interface.",
@@ -88,8 +88,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#2b3d6b" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Leopardus" },
-      { name: "application-name", content: "Leopardus" },
+      { name: "apple-mobile-web-app-title", content: "LEO PARDUS" },
+      { name: "application-name", content: "LEO PARDUS NEUROMEDICO" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

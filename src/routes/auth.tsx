@@ -11,12 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — NEET 2027 CBT Practice" },
+      { title: "Sign in — LEO PARDUS NEUROMEDICO" },
       {
         name: "description",
         content: "Sign in to your personal NEET 2027 CBT practice admin account.",
       },
-      { property: "og:title", content: "Sign in — NEET 2027 CBT Practice" },
+      { property: "og:title", content: "Sign in — LEO PARDUS NEUROMEDICO" },
       {
         property: "og:description",
         content: "Access your NEET 2027 question bank and CBT practice sessions.",
@@ -61,7 +61,7 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="mb-6 flex items-center justify-center gap-2 text-primary">
           <GraduationCap className="size-7" />
-          <span className="text-lg font-semibold">NEET 2027 CBT Practice</span>
+          <span className="text-lg font-semibold">LEO PARDUS NEUROMEDICO</span>
         </Link>
         <div className="exam-surface rounded-md p-6">
           <Tabs defaultValue="signin">

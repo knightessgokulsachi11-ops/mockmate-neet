@@ -16,13 +16,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NEET 2027 CBT Practice — Home" },
+      { title: "LEO PARDUS NEUROMEDICO — Home" },
       {
         name: "description",
         content:
           "Practise NEET 2027 subject-wise, chapter-wise, topic-wise, by difficulty, PYQs and full mock tests in an NTA-style CBT interface.",
       },
-      { property: "og:title", content: "NEET 2027 CBT Practice — Home" },
+      { property: "og:title", content: "LEO PARDUS NEUROMEDICO — Home" },
       {
         property: "og:description",
         content: "An NTA-style CBT practice environment for NEET 2027 preparation.",
