@@ -43,5 +43,5 @@ function ExamPage() {
     );
   }
 
-  return <ExamRunner session={session} candidate={user?.email ?? "Candidate"} />;
+  return <ExamRunner session={session} candidate="Leopardus" />;
 }
