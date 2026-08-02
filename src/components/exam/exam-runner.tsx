@@ -312,16 +312,33 @@ export function ExamRunner({ session, candidate }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/40 p-3">
-            <Button size="sm" onClick={() => saveAnswer(true, false)}>
+            <Button
+              size="sm"
+              className="bg-nta-save text-nta-save-foreground hover:bg-nta-save/90"
+              onClick={() => saveAnswer(true, false)}
+            >
               Save &amp; Next
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => saveAnswer(false, true)}>
+            <Button
+              size="sm"
+              className="bg-nta-mark text-nta-mark-foreground hover:bg-nta-mark/90"
+              onClick={() => saveAnswer(false, true)}
+            >
               Save &amp; Mark for Review
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => saveAnswer(true, true)}>
+            <Button
+              size="sm"
+              className="bg-nta-review text-nta-review-foreground hover:bg-nta-review/90"
+              onClick={() => saveAnswer(true, true)}
+            >
               Mark for Review &amp; Next
             </Button>
-            <Button size="sm" variant="outline" onClick={clearResponse}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-border bg-card text-foreground hover:bg-muted"
+              onClick={clearResponse}
+            >
               Clear Response
             </Button>
             <div className="ml-auto flex gap-2">

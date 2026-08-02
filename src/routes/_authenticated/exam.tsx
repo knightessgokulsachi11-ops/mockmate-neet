@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ExamRunner } from "@/components/exam/exam-runner";
 import { examStore, type ExamSession } from "@/lib/exam-store";
-import { useSession } from "@/hooks/use-auth";
+
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/exam")({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/exam")({
 function ExamPage() {
   const [session, setSession] = useState<ExamSession | null>(null);
   const [ready, setReady] = useState(false);
-  const { user } = useSession();
+  
 
   useEffect(() => {
     setSession(examStore.getSession());
@@ -43,5 +43,5 @@ function ExamPage() {
     );
   }
 
-  return <ExamRunner session={session} candidate={user?.email ?? "Candidate"} />;
+  return <ExamRunner session={session} candidate="Leopardus" />;
 }
