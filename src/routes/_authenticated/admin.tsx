@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -6,9 +6,16 @@ import { Pencil, Plus, Trash2, Search, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
 import { BulkUploadPdf } from "@/components/admin/bulk-upload";
+import { BulkImportData } from "@/components/admin/bulk-import-data";
 
 import { useIsAdmin } from "@/hooks/use-auth";
-import { useDeleteQuestion, useQuestions, useSaveQuestion, type QuestionInput } from "@/lib/questions";
+import {
+  useDeleteQuestion,
+  useQuestionCount,
+  useQuestionPages,
+  useSaveQuestion,
+  type QuestionInput,
+} from "@/lib/questions";
 import { DIFFICULTIES, OPTION_KEYS, SUBJECTS, type Question } from "@/lib/neet";
 import { extractQuestion } from "@/lib/extract-question.functions";
 import { fileToPageImages } from "@/lib/file-to-images";
@@ -95,7 +102,6 @@ const emptyForm = {
 
 function AdminPage() {
   const { isAdmin, checking } = useIsAdmin();
-  const { data: questions = [], isLoading } = useQuestions();
   const save = useSaveQuestion();
   const remove = useDeleteQuestion();
 
@@ -104,11 +110,31 @@ function AdminPage() {
   const [form, setForm] = useState<QuestionInput>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("__all__");
   const [extracting, setExtracting] = useState(false);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const runExtract = useServerFn(extractQuestion);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const filters = useMemo(
+    () => ({ subject: subjectFilter, search: debounced }),
+    [subjectFilter, debounced],
+  );
+  const {
+    data: pages,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useQuestionPages(filters);
+  const { data: totalCount = 0 } = useQuestionCount(filters);
+  const rows = useMemo(() => (pages?.pages ?? []).flat(), [pages]);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -152,21 +178,6 @@ function AdminPage() {
     }
   }
 
-
-  const filtered = useMemo(
-    () =>
-      questions.filter((q) => {
-        if (subjectFilter !== "__all__" && q.subject !== subjectFilter) return false;
-        if (!search.trim()) return true;
-        const term = search.toLowerCase();
-        return (
-          q.question_text.toLowerCase().includes(term) ||
-          q.chapter.toLowerCase().includes(term) ||
-          q.major_topic.toLowerCase().includes(term)
-        );
-      }),
-    [questions, search, subjectFilter],
-  );
 
   function openNew() {
     setEditing(null);
@@ -238,12 +249,13 @@ function AdminPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Question Bank</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {questions.length} question{questions.length === 1 ? "" : "s"} · synced across all
-              your devices.
+              {totalCount.toLocaleString()} question{totalCount === 1 ? "" : "s"} · synced across
+              all your devices.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <BulkUploadPdf />
+            <BulkImportData />
             <Button onClick={openNew}>
               <Plus className="size-4" /> Add question
             </Button>
@@ -280,7 +292,7 @@ function AdminPage() {
         <div className="exam-surface mt-4 overflow-x-auto rounded-md">
           {isLoading ? (
             <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-          ) : filtered.length === 0 ? (
+          ) : rows.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">No questions yet.</p>
           ) : (
             <table className="w-full min-w-[720px] text-sm">
@@ -295,7 +307,7 @@ function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((q) => (
+                {rows.map((q) => (
                   <tr key={q.id} className="border-t border-border align-top">
                     <td className="max-w-sm px-3 py-2">
                       <span className="line-clamp-2">{q.question_text}</span>
@@ -326,7 +338,25 @@ function AdminPage() {
             </table>
           )}
         </div>
+
+        {rows.length > 0 && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              Showing {rows.length.toLocaleString()} of {totalCount.toLocaleString()} questions
+            </p>
+            {hasNextPage && (
+              <Button
+                variant="outline"
+                disabled={isFetchingNextPage}
+                onClick={() => void fetchNextPage()}
+              >
+                {isFetchingNextPage ? "Loading…" : "Load more"}
+              </Button>
+            )}
+          </div>
+        )}
       </main>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
