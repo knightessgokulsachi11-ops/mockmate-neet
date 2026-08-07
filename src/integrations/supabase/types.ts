@@ -160,6 +160,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_questions: {
+        Args: {
+          _chapter?: string
+          _difficulty?: string
+          _pyq_only?: boolean
+          _search?: string
+          _subject?: string
+          _topic?: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -167,6 +178,94 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_chapters: {
+        Args: { _subject?: string }
+        Returns: {
+          chapter: string
+          question_count: number
+        }[]
+      }
+      list_topics: {
+        Args: { _chapter?: string; _subject?: string }
+        Returns: {
+          major_topic: string
+          question_count: number
+        }[]
+      }
+      sample_questions: {
+        Args: {
+          _chapter?: string
+          _difficulty?: string
+          _limit?: number
+          _pyq_only?: boolean
+          _subject?: string
+          _topic?: string
+        }
+        Returns: {
+          chapter: string
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string
+          id: string
+          image_url: string | null
+          is_pyq: boolean
+          major_topic: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          subject: Database["public"]["Enums"]["neet_subject"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_questions: {
+        Args: {
+          _chapter?: string
+          _difficulty?: string
+          _limit?: number
+          _offset?: number
+          _pyq_only?: boolean
+          _search?: string
+          _subject?: string
+          _topic?: string
+        }
+        Returns: {
+          chapter: string
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string
+          id: string
+          image_url: string | null
+          is_pyq: boolean
+          major_topic: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          subject: Database["public"]["Enums"]["neet_subject"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin"
