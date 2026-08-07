@@ -21,7 +21,7 @@ export interface QuestionFilters {
   search?: string | null;
 }
 
-const nn = (v?: string | null) => (v && v !== "__all__" && v !== "__any__" ? v : null);
+const nn = (v?: string | null) => (v && v !== "__all__" && v !== "__any__" ? v : undefined);
 
 function rpcArgs(f: QuestionFilters) {
   return {
