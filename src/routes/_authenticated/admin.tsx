@@ -338,7 +338,25 @@ function AdminPage() {
             </table>
           )}
         </div>
+
+        {rows.length > 0 && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              Showing {rows.length.toLocaleString()} of {totalCount.toLocaleString()} questions
+            </p>
+            {hasNextPage && (
+              <Button
+                variant="outline"
+                disabled={isFetchingNextPage}
+                onClick={() => void fetchNextPage()}
+              >
+                {isFetchingNextPage ? "Loading…" : "Load more"}
+              </Button>
+            )}
+          </div>
+        )}
       </main>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
