@@ -173,3 +173,26 @@ export function useDeleteQuestion() {
 export function uniqueValues(questions: Question[], key: "chapter" | "major_topic") {
   return Array.from(new Set(questions.map((q) => q[key]).filter(Boolean))).sort();
 }
+
+/** Chunked insert for very large imports, with progress + per-chunk error reporting. */
+export async function insertQuestionsChunked(
+  rows: QuestionInput[],
+  onProgress: (inserted: number, total: number) => void,
+  chunkSize = 200,
+): Promise<{ inserted: number; failed: number; errors: string[] }> {
+  let inserted = 0;
+  let failed = 0;
+  const errors: string[] = [];
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const { error } = await supabase.from("questions").insert(chunk as never);
+    if (error) {
+      failed += chunk.length;
+      if (errors.length < 5) errors.push(`Rows ${i + 1}-${i + chunk.length}: ${error.message}`);
+    } else {
+      inserted += chunk.length;
+    }
+    onProgress(inserted + failed, rows.length);
+  }
+  return { inserted, failed, errors };
+}
