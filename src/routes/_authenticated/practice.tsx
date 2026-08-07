@@ -2,7 +2,12 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
-import { useQuestions, uniqueValues } from "@/lib/questions";
+import {
+  sampleQuestions,
+  useChapterList,
+  useQuestionCount,
+  useTopicList,
+} from "@/lib/questions";
 import {
   DIFFICULTIES,
   FULL_MOCK_MINUTES,
@@ -63,7 +68,6 @@ export const Route = createFileRoute("/_authenticated/practice")({
 function PracticeBuilder() {
   const { mode } = Route.useSearch() as { mode: Mode };
   const navigate = useNavigate();
-  const { data: questions = [], isLoading } = useQuestions();
 
   const [subject, setSubject] = useState<string>(ANY);
   const [chapter, setChapter] = useState<string>(ANY);
@@ -74,34 +78,33 @@ function PracticeBuilder() {
   const [minutes, setMinutes] = useState(20);
   const [timing, setTiming] = useState<ExamTiming>("timed");
 
-  const scoped = useMemo(
-    () => (subject === ANY ? questions : questions.filter((q) => q.subject === subject)),
-    [questions, subject],
-  );
-  const chapters = useMemo(() => uniqueValues(scoped, "chapter"), [scoped]);
-  const topics = useMemo(
-    () =>
-      uniqueValues(
-        chapter === ANY ? scoped : scoped.filter((q) => q.chapter === chapter),
-        "major_topic",
-      ),
-    [scoped, chapter],
-  );
+  const [starting, setStarting] = useState(false);
 
-  const filtered = useMemo(() => {
-    return questions.filter((q) => {
-      if (subject !== ANY && q.subject !== subject) return false;
-      if (chapter !== ANY && q.chapter !== chapter) return false;
-      if (topic !== ANY && q.major_topic !== topic) return false;
-      if (difficulty !== ANY && q.difficulty !== difficulty) return false;
-      if (pyqOnly && !q.is_pyq) return false;
-      return true;
-    });
-  }, [questions, subject, chapter, topic, difficulty, pyqOnly]);
+  const { data: chapterRows = [], isLoading: chaptersLoading } = useChapterList(subject);
+  const { data: topicRows = [] } = useTopicList(subject, chapter);
+  const chapters = useMemo(() => chapterRows.map((c) => c.chapter), [chapterRows]);
+  const topics = useMemo(() => topicRows.map((t) => t.major_topic), [topicRows]);
 
-  function startPractice() {
-    if (filtered.length === 0) return toast.error("No questions match these filters");
-    const picked = shuffle(filtered).slice(0, Math.min(count, filtered.length));
+  const filters = useMemo(
+    () => ({ subject, chapter, topic, difficulty, pyqOnly }),
+    [subject, chapter, topic, difficulty, pyqOnly],
+  );
+  const { data: matchCount = 0, isLoading: countLoading } = useQuestionCount(filters);
+  const { data: bankCount = 0 } = useQuestionCount({});
+  const isLoading = chaptersLoading && countLoading;
+
+  async function startPractice() {
+    if (matchCount === 0) return toast.error("No questions match these filters");
+    setStarting(true);
+    let picked: Question[] = [];
+    try {
+      picked = await sampleQuestions(filters, Math.min(count, 500));
+    } catch (err) {
+      setStarting(false);
+      return toast.error(err instanceof Error ? err.message : "Could not build the test");
+    }
+    setStarting(false);
+    if (picked.length === 0) return toast.error("No questions match these filters");
     examStore.setSession({
       title: `${MODE_TITLES[mode]} — ${timing === "timed" ? "Timed" : "Untimed"}`,
       mode: "practice",
@@ -112,12 +115,19 @@ function PracticeBuilder() {
     navigate({ to: "/exam" });
   }
 
-  function startMock() {
-    const picked: Question[] = [];
-    for (const s of SUBJECTS) {
-      const pool = questions.filter((q) => q.subject === s);
-      picked.push(...shuffle(pool).slice(0, FULL_MOCK_PER_SUBJECT));
+  async function startMock() {
+    setStarting(true);
+    let picked: Question[] = [];
+    try {
+      const perSubject = await Promise.all(
+        SUBJECTS.map((s) => sampleQuestions({ subject: s }, FULL_MOCK_PER_SUBJECT)),
+      );
+      picked = shuffle(perSubject.flat());
+    } catch (err) {
+      setStarting(false);
+      return toast.error(err instanceof Error ? err.message : "Could not build the mock test");
     }
+    setStarting(false);
     if (picked.length === 0) return toast.error("Add questions to the bank first");
     examStore.setSession({
       title: `Full Mock Test (${timing === "timed" ? "Timed" : "Untimed"}) — ${picked.length} questions`,
@@ -152,7 +162,7 @@ function PracticeBuilder() {
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-muted-foreground">Questions in bank</dt>
-                <dd className="text-lg font-semibold">{questions.length}</dd>
+                <dd className="text-lg font-semibold">{bankCount.toLocaleString()}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Duration</dt>
@@ -164,8 +174,8 @@ function PracticeBuilder() {
             <div className="mt-5">
               <TimingChoice value={timing} onChange={setTiming} />
             </div>
-            <Button className="mt-5 w-full" onClick={startMock}>
-              Start Full Mock Test
+            <Button className="mt-5 w-full" disabled={starting} onClick={() => void startMock()}>
+              {starting ? "Preparing…" : "Start Full Mock Test"}
             </Button>
           </div>
         ) : (
@@ -294,10 +304,15 @@ function PracticeBuilder() {
 
 
             <p className="text-sm text-muted-foreground">
-              {filtered.length} matching question{filtered.length === 1 ? "" : "s"} available.
+              {matchCount.toLocaleString()} matching question{matchCount === 1 ? "" : "s"}{" "}
+              available.
             </p>
-            <Button className="w-full" onClick={startPractice} disabled={filtered.length === 0}>
-              Generate practice test
+            <Button
+              className="w-full"
+              onClick={() => void startPractice()}
+              disabled={matchCount === 0 || starting}
+            >
+              {starting ? "Preparing…" : "Generate practice test"}
             </Button>
           </div>
         )}
