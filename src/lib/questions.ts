@@ -1,8 +1,111 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Question } from "./neet";
 
 export type QuestionInput = Omit<Question, "id" | "created_at">;
+
+export const PAGE_SIZE = 50;
+
+export interface QuestionFilters {
+  subject?: string | null;
+  chapter?: string | null;
+  topic?: string | null;
+  difficulty?: string | null;
+  pyqOnly?: boolean;
+  search?: string | null;
+}
+
+const nn = (v?: string | null) => (v && v !== "__all__" && v !== "__any__" ? v : null);
+
+function rpcArgs(f: QuestionFilters) {
+  return {
+    _subject: nn(f.subject),
+    _chapter: nn(f.chapter),
+    _topic: nn(f.topic),
+    _difficulty: nn(f.difficulty),
+    _pyq_only: Boolean(f.pyqOnly),
+  };
+}
+
+/** Server-side paginated question list — only one page is ever fetched. */
+export function useQuestionPages(filters: QuestionFilters) {
+  return useInfiniteQuery({
+    queryKey: ["questions", "page", filters] as const,
+    initialPageParam: 0,
+    placeholderData: keepPreviousData,
+    queryFn: async ({ pageParam }) => {
+      const { data, error } = await supabase.rpc("search_questions", {
+        ...rpcArgs(filters),
+        _search: nn(filters.search),
+        _limit: PAGE_SIZE,
+        _offset: pageParam as number,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as Question[];
+    },
+    getNextPageParam: (last, all) =>
+      last.length < PAGE_SIZE ? undefined : all.length * PAGE_SIZE,
+  });
+}
+
+/** Fast COUNT(*) through an indexed server routine. */
+export function useQuestionCount(filters: QuestionFilters) {
+  return useQuery({
+    queryKey: ["questions", "count", filters] as const,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("count_questions", {
+        ...rpcArgs(filters),
+        _search: nn(filters.search),
+      });
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+  });
+}
+
+export function useChapterList(subject?: string | null) {
+  return useQuery({
+    queryKey: ["questions", "chapters", nn(subject)] as const,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_chapters", { _subject: nn(subject) });
+      if (error) throw error;
+      return (data ?? []) as { chapter: string; question_count: number }[];
+    },
+  });
+}
+
+export function useTopicList(subject?: string | null, chapter?: string | null) {
+  return useQuery({
+    queryKey: ["questions", "topics", nn(subject), nn(chapter)] as const,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_topics", {
+        _subject: nn(subject),
+        _chapter: nn(chapter),
+      });
+      if (error) throw error;
+      return (data ?? []) as { major_topic: string; question_count: number }[];
+    },
+  });
+}
+
+/** Random sample straight from the database — never loads the whole bank. */
+export async function sampleQuestions(filters: QuestionFilters, limit: number) {
+  const { data, error } = await supabase.rpc("sample_questions", {
+    ...rpcArgs(filters),
+    _limit: Math.max(1, Math.min(limit, 500)),
+  });
+  if (error) throw error;
+  return (data ?? []) as unknown as Question[];
+}
 
 export const questionsQueryOptions = {
   queryKey: ["questions"] as const,
