@@ -141,15 +141,6 @@ export function useTopicList(subject?: string | null, chapter?: string | null) {
   });
 }
 
-/** Random sample straight from the database — never loads the whole bank. */
-export async function sampleQuestions(filters: QuestionFilters, limit: number) {
-  const { data, error } = await supabase.rpc("sample_questions", {
-    ...rpcArgs(filters),
-    _limit: Math.max(1, Math.min(limit, 500)),
-  });
-  if (error) throw error;
-  return (data ?? []) as unknown as Question[];
-}
 
 export const questionsQueryOptions = {
   queryKey: ["questions"] as const,
