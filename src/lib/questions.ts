@@ -209,25 +209,53 @@ export function uniqueValues(questions: Question[], key: "chapter" | "major_topi
   return Array.from(new Set(questions.map((q) => q[key]).filter(Boolean))).sort();
 }
 
-/** Chunked insert for very large imports, with progress + per-chunk error reporting. */
+/**
+ * Chunked insert for very large imports: batches run with bounded concurrency and
+ * transient failures are retried with backoff, so million-row files import reliably.
+ */
 export async function insertQuestionsChunked(
   rows: QuestionInput[],
   onProgress: (inserted: number, total: number) => void,
-  chunkSize = 200,
+  chunkSize = 500,
+  concurrency = 4,
 ): Promise<{ inserted: number; failed: number; errors: string[] }> {
   let inserted = 0;
   let failed = 0;
   const errors: string[] = [];
+
+  const chunks: { start: number; rows: QuestionInput[] }[] = [];
   for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    const { error } = await supabase.from("questions").insert(chunk as never);
-    if (error) {
-      failed += chunk.length;
-      if (errors.length < 5) errors.push(`Rows ${i + 1}-${i + chunk.length}: ${error.message}`);
-    } else {
-      inserted += chunk.length;
-    }
-    onProgress(inserted + failed, rows.length);
+    chunks.push({ start: i, rows: rows.slice(i, i + chunkSize) });
   }
+
+  let next = 0;
+  async function worker() {
+    while (next < chunks.length) {
+      const chunk = chunks[next++]!;
+      let lastError = "";
+      let ok = false;
+      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+        const { error } = await supabase.from("questions").insert(chunk.rows as never);
+        if (!error) {
+          ok = true;
+          break;
+        }
+        lastError = error.message;
+        await new Promise((r) => setTimeout(r, 300 * 2 ** attempt));
+      }
+      if (ok) inserted += chunk.rows.length;
+      else {
+        failed += chunk.rows.length;
+        if (errors.length < 5)
+          errors.push(`Rows ${chunk.start + 1}-${chunk.start + chunk.rows.length}: ${lastError}`);
+      }
+      onProgress(inserted + failed, rows.length);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.max(1, Math.min(concurrency, chunks.length || 1)) }, worker),
+  );
   return { inserted, failed, errors };
 }
+
