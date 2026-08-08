@@ -182,11 +182,8 @@ export function useBulkInsertQuestions() {
   return useMutation({
     mutationFn: async (values: QuestionInput[]) => {
       if (values.length === 0) return 0;
-      for (let i = 0; i < values.length; i += 50) {
-        const chunk = values.slice(i, i + 50);
-        const { error } = await supabase.from("questions").insert(chunk as never);
-        if (error) throw error;
-      }
+      const res = await insertQuestionsChunked(values, () => {});
+      if (res.failed) throw new Error(res.errors[0] ?? "Some questions failed to save");
       return values.length;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["questions"] }),
