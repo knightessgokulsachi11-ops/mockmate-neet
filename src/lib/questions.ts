@@ -113,6 +113,64 @@ export async function sampleQuestions(filters: QuestionFilters, limit: number) {
   return (data ?? []) as unknown as Question[];
 }
 
+/**
+ * Random sample drawn from a fixed set of chapters (used by monthly cumulative tests).
+ * Requests are spread across the chapters and topped up if some chapters are thin.
+ */
+export async function sampleAcrossChapters(
+  subject: string,
+  chapters: string[],
+  limit: number,
+): Promise<Question[]> {
+  if (limit <= 0) return [];
+  if (chapters.length === 0) return sampleQuestions({ subject }, limit);
+
+  const order = [...chapters].sort(() => Math.random() - 0.5);
+  const per = Math.max(2, Math.ceil((limit / order.length) * 2));
+  const collected: Question[] = [];
+  const seen = new Set<string>();
+
+  const CONCURRENCY = 6;
+  for (let i = 0; i < order.length && collected.length < limit * 2; i += CONCURRENCY) {
+    const batch = order.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((chapter) =>
+        sampleQuestions({ subject, chapter }, per).catch(() => [] as Question[]),
+      ),
+    );
+    for (const rows of results) {
+      for (const q of rows) {
+        if (seen.has(q.id)) continue;
+        seen.add(q.id);
+        collected.push(q);
+      }
+    }
+  }
+
+  return collected.sort(() => Math.random() - 0.5).slice(0, limit);
+}
+
+/** Total questions available across a fixed chapter set. */
+export async function countAcrossChapters(subject: string, chapters: string[]) {
+  if (chapters.length === 0) return 0;
+  const counts = await Promise.all(
+    chapters.map(async (chapter) => {
+      const { data, error } = await supabase.rpc("count_questions", {
+        _subject: subject,
+        _chapter: chapter,
+        _topic: undefined,
+        _difficulty: undefined,
+        _pyq_only: false,
+        _search: undefined,
+      });
+      if (error) return 0;
+      return Number(data ?? 0);
+    }),
+  );
+  return counts.reduce((a, b) => a + b, 0);
+}
+
+
 
 export function useChapterList(subject?: string | null) {
   return useQuery({
