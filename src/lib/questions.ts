@@ -56,7 +56,7 @@ export function useQuestionPages(filters: QuestionFilters) {
     getNextPageParam: (last): Cursor => {
       if (last.length < PAGE_SIZE) return null;
       const tail = last[last.length - 1]!;
-      return { created_at: tail.created_at, id: tail.id };
+      return { created_at: String(tail.created_at ?? ""), id: String(tail.id) };
     },
   });
 }
