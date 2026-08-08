@@ -31,6 +31,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          rand: number
           subject: Database["public"]["Enums"]["neet_subject"]
           updated_at: string
         }
@@ -50,6 +51,7 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          rand?: number
           subject: Database["public"]["Enums"]["neet_subject"]
           updated_at?: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           option_c?: string
           option_d?: string
           question_text?: string
+          rand?: number
           subject?: Database["public"]["Enums"]["neet_subject"]
           updated_at?: string
         }
@@ -171,6 +174,22 @@ export type Database = {
         }
         Returns: number
       }
+      count_questions_capped: {
+        Args: {
+          _cap?: number
+          _chapter?: string
+          _difficulty?: string
+          _pyq_only?: boolean
+          _search?: string
+          _subject?: string
+          _topic?: string
+        }
+        Returns: {
+          capped: boolean
+          total: number
+        }[]
+      }
+      estimate_questions: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -217,6 +236,43 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          rand: number
+          subject: Database["public"]["Enums"]["neet_subject"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      sample_questions_fast: {
+        Args: {
+          _chapter?: string
+          _difficulty?: string
+          _limit?: number
+          _pyq_only?: boolean
+          _subject?: string
+          _topic?: string
+        }
+        Returns: {
+          chapter: string
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string
+          id: string
+          image_url: string | null
+          is_pyq: boolean
+          major_topic: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          rand: number
           subject: Database["public"]["Enums"]["neet_subject"]
           updated_at: string
         }[]
@@ -254,6 +310,46 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          rand: number
+          subject: Database["public"]["Enums"]["neet_subject"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "questions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      search_questions_keyset: {
+        Args: {
+          _after_created_at?: string
+          _after_id?: string
+          _chapter?: string
+          _difficulty?: string
+          _limit?: number
+          _pyq_only?: boolean
+          _search?: string
+          _subject?: string
+          _topic?: string
+        }
+        Returns: {
+          chapter: string
+          correct_answer: string
+          created_at: string
+          created_by: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          explanation: string
+          id: string
+          image_url: string | null
+          is_pyq: boolean
+          major_topic: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          rand: number
           subject: Database["public"]["Enums"]["neet_subject"]
           updated_at: string
         }[]
