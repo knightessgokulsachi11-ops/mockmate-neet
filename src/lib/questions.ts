@@ -33,42 +33,86 @@ function rpcArgs(f: QuestionFilters) {
   };
 }
 
-/** Server-side paginated question list — only one page is ever fetched. */
+/** Cursor (keyset) pagination — deep pages cost the same as the first page. */
+type Cursor = { created_at: string; id: string } | null;
+
 export function useQuestionPages(filters: QuestionFilters) {
   return useInfiniteQuery({
     queryKey: ["questions", "page", filters] as const,
-    initialPageParam: 0,
+    initialPageParam: null as Cursor,
     placeholderData: keepPreviousData,
     queryFn: async ({ pageParam }) => {
-      const { data, error } = await supabase.rpc("search_questions", {
+      const cursor = pageParam as Cursor;
+      const { data, error } = await supabase.rpc("search_questions_keyset", {
         ...rpcArgs(filters),
         _search: nn(filters.search),
         _limit: PAGE_SIZE,
-        _offset: pageParam as number,
+        _after_created_at: cursor?.created_at ?? undefined,
+        _after_id: cursor?.id ?? undefined,
       });
       if (error) throw error;
       return (data ?? []) as unknown as Question[];
     },
-    getNextPageParam: (last, all) =>
-      last.length < PAGE_SIZE ? undefined : all.length * PAGE_SIZE,
-  });
-}
-
-/** Fast COUNT(*) through an indexed server routine. */
-export function useQuestionCount(filters: QuestionFilters) {
-  return useQuery({
-    queryKey: ["questions", "count", filters] as const,
-    placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("count_questions", {
-        ...rpcArgs(filters),
-        _search: nn(filters.search),
-      });
-      if (error) throw error;
-      return Number(data ?? 0);
+    getNextPageParam: (last): Cursor => {
+      if (last.length < PAGE_SIZE) return null;
+      const tail = last[last.length - 1]!;
+      return { created_at: tail.created_at, id: tail.id };
     },
   });
 }
+
+/**
+ * Count that stays fast at any scale: exact up to COUNT_CAP rows, otherwise the
+ * planner estimate for the whole bank (unfiltered) or a capped ">N" figure.
+ */
+export const COUNT_CAP = 100_000;
+
+export interface QuestionCount {
+  total: number;
+  capped: boolean;
+}
+
+export function useQuestionCountInfo(filters: QuestionFilters) {
+  return useQuery({
+    queryKey: ["questions", "count", filters] as const,
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<QuestionCount> => {
+      const { data, error } = await supabase.rpc("count_questions_capped", {
+        ...rpcArgs(filters),
+        _search: nn(filters.search),
+        _cap: COUNT_CAP,
+      });
+      if (error) throw error;
+      const row = (data ?? [])[0] as { total: number; capped: boolean } | undefined;
+      if (row && !row.capped) return { total: Number(row.total), capped: false };
+      const est = await supabase.rpc("estimate_questions");
+      const approx = Number(est.data ?? row?.total ?? 0);
+      return { total: Math.max(approx, Number(row?.total ?? 0)), capped: true };
+    },
+  });
+}
+
+/** Backwards-compatible numeric count. */
+export function useQuestionCount(filters: QuestionFilters) {
+  const q = useQuestionCountInfo(filters);
+  return { ...q, data: q.data?.total ?? 0 } as typeof q & { data: number };
+}
+
+export function formatCount(info?: QuestionCount) {
+  if (!info) return "0";
+  return `${info.capped ? "~" : ""}${info.total.toLocaleString()}`;
+}
+
+/** Random sample straight from the database — index-backed, never sorts the bank. */
+export async function sampleQuestions(filters: QuestionFilters, limit: number) {
+  const { data, error } = await supabase.rpc("sample_questions_fast", {
+    ...rpcArgs(filters),
+    _limit: Math.max(1, Math.min(limit, 500)),
+  });
+  if (error) throw error;
+  return (data ?? []) as unknown as Question[];
+}
+
 
 export function useChapterList(subject?: string | null) {
   return useQuery({
