@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedResultRouteImport } from './routes/_authenticated/result'
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
+import { Route as AuthenticatedMonthlyRouteImport } from './routes/_authenticated/monthly'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -54,6 +55,11 @@ const AuthenticatedPracticeRoute = AuthenticatedPracticeRouteImport.update({
   path: '/practice',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMonthlyRoute = AuthenticatedMonthlyRouteImport.update({
+  id: '/monthly',
+  path: '/monthly',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/monthly': typeof AuthenticatedMonthlyRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/result': typeof AuthenticatedResultRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/monthly': typeof AuthenticatedMonthlyRoute
   '/practice': typeof AuthenticatedPracticeRoute
   '/result': typeof AuthenticatedResultRoute
   '/review': typeof AuthenticatedReviewRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/monthly': typeof AuthenticatedMonthlyRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
   '/_authenticated/result': typeof AuthenticatedResultRoute
   '/_authenticated/review': typeof AuthenticatedReviewRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/exam'
     | '/history'
+    | '/monthly'
     | '/practice'
     | '/result'
     | '/review'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/exam'
     | '/history'
+    | '/monthly'
     | '/practice'
     | '/result'
     | '/review'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/exam'
     | '/_authenticated/history'
+    | '/_authenticated/monthly'
     | '/_authenticated/practice'
     | '/_authenticated/result'
     | '/_authenticated/review'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPracticeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/monthly': {
+      id: '/_authenticated/monthly'
+      path: '/monthly'
+      fullPath: '/monthly'
+      preLoaderRoute: typeof AuthenticatedMonthlyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -228,6 +247,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedMonthlyRoute: typeof AuthenticatedMonthlyRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
   AuthenticatedResultRoute: typeof AuthenticatedResultRoute
   AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
@@ -237,6 +257,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedExamRoute: AuthenticatedExamRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedMonthlyRoute: AuthenticatedMonthlyRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,
   AuthenticatedResultRoute: AuthenticatedResultRoute,
   AuthenticatedReviewRoute: AuthenticatedReviewRoute,
@@ -254,13 +275,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

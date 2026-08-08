@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Atom,
   BookOpen,
+  CalendarRange,
   Layers,
   ListChecks,
   SignalHigh,
@@ -9,6 +10,7 @@ import {
   History,
   ArrowRight,
 } from "lucide-react";
+
 import { SiteHeader } from "@/components/site-header";
 import { useSession } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -151,6 +153,20 @@ function Home() {
 
         <section className="exam-surface mt-4 rounded-md p-5">
           <div className="flex items-center gap-2">
+            <CalendarRange className="size-5 text-primary" />
+            <h2 className="text-base font-semibold">Monthly Cumulative Tests</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            All Subjects, Physics, Chemistry or Biology — every month covers the previous months&apos;
+            chapters plus the current month&apos;s syllabus.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to={session ? "/monthly" : "/auth"}>Open monthly tests</Link>
+          </Button>
+        </section>
+
+        <section className="exam-surface mt-4 rounded-md p-5">
+          <div className="flex items-center gap-2">
             <History className="size-5 text-primary" />
             <h2 className="text-base font-semibold">My Test History</h2>
           </div>
@@ -161,6 +177,7 @@ function Home() {
             <Link to={session ? "/history" : "/auth"}>View test history</Link>
           </Button>
         </section>
+
       </main>
     </div>
   );
