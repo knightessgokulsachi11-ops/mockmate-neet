@@ -213,20 +213,72 @@ function MonthlyTests() {
           </div>
 
           <div className="rounded-sm border border-dashed border-border p-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Layers className="size-4 text-primary" /> Fixed coverage · {totalChapters} chapters
-            </p>
-            <div className="mt-2 space-y-2">
-              {groups.map((g) => (
-                <div key={g.subject}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {g.subject} ({g.chapters.length})
-                  </p>
-                  <p className="text-sm">{g.chapters.join(" · ")}</p>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <Layers className="size-4 text-primary" /> Your coverage · {totalChapters} chapters
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
+                <Pencil className="size-3.5" /> {editing ? "Done editing" : "Edit chapters"}
+              </Button>
             </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-sm bg-muted/40 px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Include earlier months</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Off = only the chapters you picked for this month.
+                </p>
+              </div>
+              <Switch checked={cumulative} onCheckedChange={setCumulative} />
+            </div>
+
+            {editing ? (
+              <div className="mt-3 space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Editing chapters for{" "}
+                    <span className="font-semibold text-foreground">
+                      {MONTHLY_PLAN.find((m) => m.id === monthId)?.label}
+                    </span>
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => clearMonth(monthId)}
+                  >
+                    Clear month
+                  </Button>
+                </div>
+                {CATEGORY_SUBJECTS[category].map((s) => (
+                  <ChapterPicker
+                    key={s}
+                    subject={s}
+                    selected={plan[monthId]?.[s] ?? []}
+                    onChange={(chapters) => setMonthSubject(monthId, s, chapters)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {totalChapters === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No chapters chosen yet. Tap “Edit chapters” to pick the exact chapters for this
+                    month.
+                  </p>
+                )}
+                {groups.map((g) => (
+                  <div key={g.subject}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {g.subject} ({g.chapters.length})
+                    </p>
+                    <p className="text-sm">{g.chapters.join(" · ") || "—"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
 
           <div className="space-y-1.5">
             <Label>Test mode</Label>
