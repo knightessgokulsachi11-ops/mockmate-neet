@@ -44,6 +44,9 @@ function MonthlyTests() {
   const navigate = useNavigate();
   const [monthId, setMonthId] = useState(MONTHLY_PLAN[0]!.id);
   const [category, setCategory] = useState<MonthlyCategory>("all");
+  const [testsPerMonth, setTestsPerMonth] = useState<Record<string, number>>({});
+  const [testNo, setTestNo] = useState(1);
+  const testCount = Math.max(1, Math.min(testsPerMonth[monthId] ?? 1, 30));
   const [count, setCount] = useState(45);
   const [minutes, setMinutes] = useState(60);
   const [timing, setTiming] = useState<ExamTiming>("timed");
