@@ -164,8 +164,14 @@ function MonthlyTests() {
                 >
                   <span className="block text-sm font-semibold">{m.label}</span>
                   <span className="text-[11px] text-muted-foreground">
-                    {(testsPerMonth[m.id] ?? 1)} test{(testsPerMonth[m.id] ?? 1) === 1 ? "" : "s"} · cumulative
+                    {(testsPerMonth[m.id] ?? 1)} test{(testsPerMonth[m.id] ?? 1) === 1 ? "" : "s"} ·{" "}
+                    {(Object.values(plan[m.id] ?? {}) as string[][]).reduce(
+                      (n, list) => n + list.length,
+                      0,
+                    )}{" "}
+                    chapters
                   </span>
+
                 </button>
               ))}
             </div>
