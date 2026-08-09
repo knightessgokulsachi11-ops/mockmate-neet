@@ -121,8 +121,9 @@ function MonthlyTests() {
           <CalendarRange className="size-6 text-primary" /> Monthly Cumulative Tests
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Each month covers every chapter from the previous months plus the current month&apos;s
-          syllabus. Chapter coverage stays fixed; the questions change on every attempt.
+          You choose the exact chapters for each month — nothing is added automatically. Coverage
+          stays fixed for every test in a month; only the questions change.
+
         </p>
 
         <div className="exam-surface mt-6 space-y-5 rounded-md p-5">
