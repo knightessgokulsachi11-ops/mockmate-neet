@@ -134,12 +134,15 @@ function MonthlyTests() {
           <div className="space-y-1.5">
             <Label>Month</Label>
             <div className="grid gap-2 sm:grid-cols-3">
-              {MONTHLY_PLAN.map((m, i) => (
+              {MONTHLY_PLAN.map((m) => (
                 <button
                   key={m.id}
                   type="button"
                   aria-pressed={monthId === m.id}
-                  onClick={() => setMonthId(m.id)}
+                  onClick={() => {
+                    setMonthId(m.id);
+                    setTestNo(1);
+                  }}
                   className={
                     "rounded-sm border p-2.5 text-left transition-colors " +
                     (monthId === m.id
@@ -148,9 +151,52 @@ function MonthlyTests() {
                   }
                 >
                   <span className="block text-sm font-semibold">{m.label}</span>
-                  <span className="text-[11px] text-muted-foreground">Test {i + 1} · cumulative</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {(testsPerMonth[m.id] ?? 1)} test{(testsPerMonth[m.id] ?? 1) === 1 ? "" : "s"} · cumulative
+                  </span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Number of tests this month</Label>
+              <Input
+                type="number"
+                min={1}
+                max={30}
+                value={testCount}
+                onChange={(e) => {
+                  const n = Math.max(1, Math.min(Number(e.target.value) || 1, 30));
+                  setTestsPerMonth((p) => ({ ...p, [monthId]: n }));
+                  setTestNo((t) => Math.min(t, n));
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Which test</Label>
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: testCount }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={testNo === n}
+                    onClick={() => setTestNo(n)}
+                    className={
+                      "min-w-9 rounded-sm border px-2.5 py-1.5 text-sm font-semibold transition-colors " +
+                      (testNo === n
+                        ? "border-primary bg-accent text-accent-foreground"
+                        : "border-border hover:bg-muted/60")
+                    }
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Every test this month uses the same fixed chapters; only the questions change.
+              </p>
             </div>
           </div>
 
