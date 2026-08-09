@@ -82,7 +82,7 @@ function MonthlyTests() {
       }
       const month = MONTHLY_PLAN.find((m) => m.id === monthId)!;
       examStore.setSession({
-        title: `${month.label} Cumulative Test — ${CATEGORY_LABELS[category]} (${timing === "timed" ? "Timed" : "Untimed"})`,
+        title: `${month.label} Cumulative Test ${testNo} of ${testCount} — ${CATEGORY_LABELS[category]} (${timing === "timed" ? "Timed" : "Untimed"})`,
         mode: "practice",
         timing,
         durationSeconds: Math.max(1, minutes) * 60,
