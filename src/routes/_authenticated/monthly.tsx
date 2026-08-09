@@ -79,9 +79,14 @@ function MonthlyTests() {
 
 
   async function start() {
+    if (totalChapters === 0) {
+      toast.error("Pick at least one chapter for this month first");
+      return;
+    }
     setStarting(true);
     try {
       const wanted = Math.max(1, Math.min(count, 200));
+
       const subjects = CATEGORY_SUBJECTS[category];
       const perSubject = Math.ceil(wanted / subjects.length);
       const picks = await Promise.all(
