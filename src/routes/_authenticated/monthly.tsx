@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarRange, Layers } from "lucide-react";
+import { CalendarRange, Layers, Pencil } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ChapterPicker } from "@/components/monthly/chapter-picker";
 import { countAcrossChapters, sampleAcrossChapters } from "@/lib/questions";
 import { shuffle, type Question } from "@/lib/neet";
 import { examStore, type ExamTiming } from "@/lib/exam-store";
@@ -15,9 +17,10 @@ import {
   CATEGORY_SUBJECTS,
   MONTHLY_CATEGORIES,
   MONTHLY_PLAN,
-  chaptersFor,
   type MonthlyCategory,
 } from "@/lib/monthly-plan";
+import { cumulativeFromPlan, useMonthlyPlan } from "@/lib/monthly-plan-store";
+
 
 export const Route = createFileRoute("/_authenticated/monthly")({
   head: () => ({
