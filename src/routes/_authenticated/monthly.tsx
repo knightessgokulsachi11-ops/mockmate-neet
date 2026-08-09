@@ -2,11 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarRange, Layers } from "lucide-react";
+import { CalendarRange, Layers, Pencil } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { ChapterPicker } from "@/components/monthly/chapter-picker";
 import { countAcrossChapters, sampleAcrossChapters } from "@/lib/questions";
 import { shuffle, type Question } from "@/lib/neet";
 import { examStore, type ExamTiming } from "@/lib/exam-store";
@@ -15,9 +17,10 @@ import {
   CATEGORY_SUBJECTS,
   MONTHLY_CATEGORIES,
   MONTHLY_PLAN,
-  chaptersFor,
   type MonthlyCategory,
 } from "@/lib/monthly-plan";
+import { cumulativeFromPlan, useMonthlyPlan } from "@/lib/monthly-plan-store";
+
 
 export const Route = createFileRoute("/_authenticated/monthly")({
   head: () => ({
@@ -51,12 +54,20 @@ function MonthlyTests() {
   const [minutes, setMinutes] = useState(60);
   const [timing, setTiming] = useState<ExamTiming>("timed");
   const [starting, setStarting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [cumulative, setCumulative] = useState(true);
 
-  const groups = useMemo(() => chaptersFor(monthId, category), [monthId, category]);
+  const { plan, hydrated, setMonthSubject, clearMonth } = useMonthlyPlan();
+
+  const groups = useMemo(() => {
+    const coverage = cumulativeFromPlan(plan, monthId, cumulative);
+    return CATEGORY_SUBJECTS[category].map((s) => ({ subject: s, chapters: coverage[s] }));
+  }, [plan, monthId, cumulative, category]);
   const totalChapters = groups.reduce((n, g) => n + g.chapters.length, 0);
 
   const { data: available = 0, isLoading: countLoading } = useQuery({
-    queryKey: ["monthly", "count", monthId, category] as const,
+    queryKey: ["monthly", "count", monthId, category, cumulative, groups] as const,
+    enabled: hydrated && totalChapters > 0,
     staleTime: 60_000,
     queryFn: async () => {
       const totals = await Promise.all(
@@ -66,10 +77,16 @@ function MonthlyTests() {
     },
   });
 
+
   async function start() {
+    if (totalChapters === 0) {
+      toast.error("Pick at least one chapter for this month first");
+      return;
+    }
     setStarting(true);
     try {
       const wanted = Math.max(1, Math.min(count, 200));
+
       const subjects = CATEGORY_SUBJECTS[category];
       const perSubject = Math.ceil(wanted / subjects.length);
       const picks = await Promise.all(
@@ -104,8 +121,9 @@ function MonthlyTests() {
           <CalendarRange className="size-6 text-primary" /> Monthly Cumulative Tests
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Each month covers every chapter from the previous months plus the current month&apos;s
-          syllabus. Chapter coverage stays fixed; the questions change on every attempt.
+          You choose the exact chapters for each month — nothing is added automatically. Coverage
+          stays fixed for every test in a month; only the questions change.
+
         </p>
 
         <div className="exam-surface mt-6 space-y-5 rounded-md p-5">
@@ -152,8 +170,14 @@ function MonthlyTests() {
                 >
                   <span className="block text-sm font-semibold">{m.label}</span>
                   <span className="text-[11px] text-muted-foreground">
-                    {(testsPerMonth[m.id] ?? 1)} test{(testsPerMonth[m.id] ?? 1) === 1 ? "" : "s"} · cumulative
+                    {(testsPerMonth[m.id] ?? 1)} test{(testsPerMonth[m.id] ?? 1) === 1 ? "" : "s"} ·{" "}
+                    {(Object.values(plan[m.id] ?? {}) as string[][]).reduce(
+                      (n, list) => n + list.length,
+                      0,
+                    )}{" "}
+                    chapters
                   </span>
+
                 </button>
               ))}
             </div>
@@ -201,20 +225,72 @@ function MonthlyTests() {
           </div>
 
           <div className="rounded-sm border border-dashed border-border p-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
-              <Layers className="size-4 text-primary" /> Fixed coverage · {totalChapters} chapters
-            </p>
-            <div className="mt-2 space-y-2">
-              {groups.map((g) => (
-                <div key={g.subject}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {g.subject} ({g.chapters.length})
-                  </p>
-                  <p className="text-sm">{g.chapters.join(" · ")}</p>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <Layers className="size-4 text-primary" /> Your coverage · {totalChapters} chapters
+              </p>
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
+                <Pencil className="size-3.5" /> {editing ? "Done editing" : "Edit chapters"}
+              </Button>
             </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-sm bg-muted/40 px-3 py-2">
+              <div>
+                <p className="text-sm font-medium">Include earlier months</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Off = only the chapters you picked for this month.
+                </p>
+              </div>
+              <Switch checked={cumulative} onCheckedChange={setCumulative} />
+            </div>
+
+            {editing ? (
+              <div className="mt-3 space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Editing chapters for{" "}
+                    <span className="font-semibold text-foreground">
+                      {MONTHLY_PLAN.find((m) => m.id === monthId)?.label}
+                    </span>
+                  </p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => clearMonth(monthId)}
+                  >
+                    Clear month
+                  </Button>
+                </div>
+                {CATEGORY_SUBJECTS[category].map((s) => (
+                  <ChapterPicker
+                    key={s}
+                    subject={s}
+                    selected={plan[monthId]?.[s] ?? []}
+                    onChange={(chapters) => setMonthSubject(monthId, s, chapters)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {totalChapters === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No chapters chosen yet. Tap “Edit chapters” to pick the exact chapters for this
+                    month.
+                  </p>
+                )}
+                {groups.map((g) => (
+                  <div key={g.subject}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {g.subject} ({g.chapters.length})
+                    </p>
+                    <p className="text-sm">{g.chapters.join(" · ") || "—"}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
 
           <div className="space-y-1.5">
             <Label>Test mode</Label>
