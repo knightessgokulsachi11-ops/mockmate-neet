@@ -54,12 +54,20 @@ function MonthlyTests() {
   const [minutes, setMinutes] = useState(60);
   const [timing, setTiming] = useState<ExamTiming>("timed");
   const [starting, setStarting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [cumulative, setCumulative] = useState(true);
 
-  const groups = useMemo(() => chaptersFor(monthId, category), [monthId, category]);
+  const { plan, hydrated, setMonthSubject, clearMonth } = useMonthlyPlan();
+
+  const groups = useMemo(() => {
+    const coverage = cumulativeFromPlan(plan, monthId, cumulative);
+    return CATEGORY_SUBJECTS[category].map((s) => ({ subject: s, chapters: coverage[s] }));
+  }, [plan, monthId, cumulative, category]);
   const totalChapters = groups.reduce((n, g) => n + g.chapters.length, 0);
 
   const { data: available = 0, isLoading: countLoading } = useQuery({
-    queryKey: ["monthly", "count", monthId, category] as const,
+    queryKey: ["monthly", "count", monthId, category, cumulative, groups] as const,
+    enabled: hydrated && totalChapters > 0,
     staleTime: 60_000,
     queryFn: async () => {
       const totals = await Promise.all(
@@ -68,6 +76,7 @@ function MonthlyTests() {
       return totals.reduce((a, b) => a + b, 0);
     },
   });
+
 
   async function start() {
     setStarting(true);
