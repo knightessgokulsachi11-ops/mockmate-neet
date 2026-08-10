@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AlertTriangle, Target, Trash2 } from "lucide-react";
@@ -338,8 +339,4 @@ function MistakesPage() {
       </main>
     </div>
   );
-}
-
-function MistakePreview({ questionId }: { questionId: string }) {
-  return <span className="text-muted-foreground">Question ID {questionId.slice(0, 8)}…</span>;
 }
