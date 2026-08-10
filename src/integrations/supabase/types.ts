@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      question_mistakes: {
+        Row: {
+          chapter: string
+          created_at: string
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          id: string
+          last_answer: string | null
+          last_wrong_at: string
+          major_topic: string
+          question_id: string
+          resolved: boolean
+          subject: Database["public"]["Enums"]["neet_subject"]
+          times_correct: number
+          times_wrong: number
+          user_id: string
+        }
+        Insert: {
+          chapter: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          last_answer?: string | null
+          last_wrong_at?: string
+          major_topic?: string
+          question_id: string
+          resolved?: boolean
+          subject: Database["public"]["Enums"]["neet_subject"]
+          times_correct?: number
+          times_wrong?: number
+          user_id: string
+        }
+        Update: {
+          chapter?: string
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          id?: string
+          last_answer?: string | null
+          last_wrong_at?: string
+          major_topic?: string
+          question_id?: string
+          resolved?: boolean
+          subject?: Database["public"]["Enums"]["neet_subject"]
+          times_correct?: number
+          times_wrong?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_mistakes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           chapter: string
@@ -211,6 +267,11 @@ export type Database = {
           question_count: number
         }[]
       }
+      record_mistake_corrections: {
+        Args: { _question_ids: string[] }
+        Returns: undefined
+      }
+      record_mistakes: { Args: { _items: Json }; Returns: undefined }
       sample_questions: {
         Args: {
           _chapter?: string
@@ -362,6 +423,16 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      weak_areas: {
+        Args: { _limit?: number }
+        Returns: {
+          chapter: string
+          major_topic: string
+          mistakes: number
+          questions: number
+          subject: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin"
