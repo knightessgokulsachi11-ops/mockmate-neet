@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, MinusCircle, Trophy } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { examStore, summarize, type ExamSubmission } from "@/lib/exam-store";
 import { useSaveAttempt } from "@/lib/attempts";
+import { useSyncMistakes } from "@/lib/mistakes";
 import { formatClock, formatDuration } from "@/lib/neet";
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,7 @@ function ResultPage() {
   const [result, setResult] = useState<ExamSubmission | null>(null);
   const [ready, setReady] = useState(false);
   const saveAttempt = useSaveAttempt();
+  const syncMistakes = useSyncMistakes();
   const savedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ function ResultPage() {
     if (stored && savedRef.current !== stored.submittedAt) {
       savedRef.current = stored.submittedAt;
       saveAttempt.mutate(stored);
+      syncMistakes.mutate(stored);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
