@@ -153,6 +153,20 @@ function Home() {
 
         <section className="exam-surface mt-4 rounded-md p-5">
           <div className="flex items-center gap-2">
+            <ListChecks className="size-5 text-primary" />
+            <h2 className="text-base font-semibold">Mock Tests</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            NEET Model Exam (Physics + Chemistry + Biology, 180 minutes), Subject-wise Mock Test or
+            Chapter-wise Mock Test.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to={session ? "/mock" : "/auth"}>Open mock tests</Link>
+          </Button>
+        </section>
+
+        <section className="exam-surface mt-4 rounded-md p-5">
+          <div className="flex items-center gap-2">
             <CalendarRange className="size-5 text-primary" />
             <h2 className="text-base font-semibold">Monthly Cumulative Tests</h2>
           </div>
@@ -164,6 +178,7 @@ function Home() {
             <Link to={session ? "/monthly" : "/auth"}>Open monthly tests</Link>
           </Button>
         </section>
+
 
         <section className="exam-surface mt-4 rounded-md p-5">
           <div className="flex items-center gap-2">
