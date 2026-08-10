@@ -18,6 +18,7 @@ import { Route as AuthenticatedResultRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedPracticeRouteImport } from './routes/_authenticated/practice'
 import { Route as AuthenticatedMonthlyRouteImport } from './routes/_authenticated/monthly'
 import { Route as AuthenticatedMockRouteImport } from './routes/_authenticated/mock'
+import { Route as AuthenticatedMistakesRouteImport } from './routes/_authenticated/mistakes'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedExamRouteImport } from './routes/_authenticated/exam'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -66,6 +67,11 @@ const AuthenticatedMockRoute = AuthenticatedMockRouteImport.update({
   path: '/mock',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMistakesRoute = AuthenticatedMistakesRouteImport.update({
+  id: '/mistakes',
+  path: '/mistakes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/mistakes': typeof AuthenticatedMistakesRoute
   '/mock': typeof AuthenticatedMockRoute
   '/monthly': typeof AuthenticatedMonthlyRoute
   '/practice': typeof AuthenticatedPracticeRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/exam': typeof AuthenticatedExamRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/mistakes': typeof AuthenticatedMistakesRoute
   '/mock': typeof AuthenticatedMockRoute
   '/monthly': typeof AuthenticatedMonthlyRoute
   '/practice': typeof AuthenticatedPracticeRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/exam': typeof AuthenticatedExamRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/mistakes': typeof AuthenticatedMistakesRoute
   '/_authenticated/mock': typeof AuthenticatedMockRoute
   '/_authenticated/monthly': typeof AuthenticatedMonthlyRoute
   '/_authenticated/practice': typeof AuthenticatedPracticeRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/exam'
     | '/history'
+    | '/mistakes'
     | '/mock'
     | '/monthly'
     | '/practice'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/exam'
     | '/history'
+    | '/mistakes'
     | '/mock'
     | '/monthly'
     | '/practice'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/exam'
     | '/_authenticated/history'
+    | '/_authenticated/mistakes'
     | '/_authenticated/mock'
     | '/_authenticated/monthly'
     | '/_authenticated/practice'
@@ -238,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMockRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mistakes': {
+      id: '/_authenticated/mistakes'
+      path: '/mistakes'
+      fullPath: '/mistakes'
+      preLoaderRoute: typeof AuthenticatedMistakesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -266,6 +285,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedExamRoute: typeof AuthenticatedExamRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedMistakesRoute: typeof AuthenticatedMistakesRoute
   AuthenticatedMockRoute: typeof AuthenticatedMockRoute
   AuthenticatedMonthlyRoute: typeof AuthenticatedMonthlyRoute
   AuthenticatedPracticeRoute: typeof AuthenticatedPracticeRoute
@@ -277,6 +297,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedExamRoute: AuthenticatedExamRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedMistakesRoute: AuthenticatedMistakesRoute,
   AuthenticatedMockRoute: AuthenticatedMockRoute,
   AuthenticatedMonthlyRoute: AuthenticatedMonthlyRoute,
   AuthenticatedPracticeRoute: AuthenticatedPracticeRoute,

@@ -9,6 +9,7 @@ import {
   Timer,
   History,
   ArrowRight,
+  AlertTriangle,
 } from "lucide-react";
 
 import { SiteHeader } from "@/components/site-header";
@@ -179,6 +180,20 @@ function Home() {
           </Button>
         </section>
 
+
+        <section className="exam-surface mt-4 rounded-md p-5">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-primary" />
+            <h2 className="text-base font-semibold">My Mistakes &amp; Weak Areas</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Every incorrect question is saved automatically. See your weak subjects, chapters and
+            topics, then practise them directly.
+          </p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link to={session ? "/mistakes" : "/auth"}>Open mistakes</Link>
+          </Button>
+        </section>
 
         <section className="exam-surface mt-4 rounded-md p-5">
           <div className="flex items-center gap-2">
