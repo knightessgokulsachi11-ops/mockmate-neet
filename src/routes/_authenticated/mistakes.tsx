@@ -298,9 +298,11 @@ function MistakesPage() {
                         {m.times_wrong}×
                       </p>
                       <p className="mt-1 text-sm">
-                        <MathText text={m.question_id} className="hidden" />
-                        <MistakePreview questionId={m.question_id} />
+                        <MathText>
+                          {texts[m.question_id] ?? "Loading question…"}
+                        </MathText>
                       </p>
+
                     </div>
                     <Button
                       size="icon"
