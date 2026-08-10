@@ -51,7 +51,24 @@ function MistakesPage() {
   const [minutes, setMinutes] = useState(20);
   const [starting, setStarting] = useState(false);
 
+  const previewIds = useMemo(
+    () => mistakes.slice(0, 50).map((m) => m.question_id),
+    [mistakes],
+  );
+  const { data: previewQuestions = [] } = useQuery({
+    queryKey: ["mistakes", "preview", previewIds] as const,
+    enabled: previewIds.length > 0,
+    staleTime: 60_000,
+    queryFn: () => fetchQuestionsByIds(previewIds),
+  });
+  const texts = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const q of previewQuestions) map[q.id] = q.question_text;
+    return map;
+  }, [previewQuestions]);
+
   const weakSubjects = useMemo(() => {
+
     const map = new Map<string, number>();
     for (const a of weakAreas) map.set(a.subject, (map.get(a.subject) ?? 0) + a.mistakes);
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
