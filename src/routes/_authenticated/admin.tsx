@@ -254,7 +254,6 @@ function AdminPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <BulkUploadPdf />
             <BulkImportData />
             <Button onClick={openNew}>
               <Plus className="size-4" /> Add question
