@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Search, Upload, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
-import { BulkUploadPdf } from "@/components/admin/bulk-upload";
 import { BulkImportData } from "@/components/admin/bulk-import-data";
 
 import { useIsAdmin } from "@/hooks/use-auth";
@@ -254,7 +253,6 @@ function AdminPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <BulkUploadPdf />
             <BulkImportData />
             <Button onClick={openNew}>
               <Plus className="size-4" /> Add question
