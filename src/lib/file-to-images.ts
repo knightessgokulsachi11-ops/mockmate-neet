@@ -33,8 +33,7 @@ async function pdfToImages(file: File, maxPages = Number.POSITIVE_INFINITY): Pro
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
 
   const buffer = await file.arrayBuffer();
-  // isEvalSupported:false keeps scanned/odd PDFs from failing under strict CSP.
-  const pdf = await pdfjs.getDocument({ data: buffer, isEvalSupported: false }).promise;
+  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const pages: string[] = [];
   const count = Math.min(pdf.numPages, maxPages);
   let failures = 0;
