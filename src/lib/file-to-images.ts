@@ -1,6 +1,7 @@
 /** Browser-only helpers: turn an uploaded image or PDF into data-URL page images. */
 
 const MAX_EDGE = 1600;
+const SCAN_EDGE = 2400;
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -81,8 +82,11 @@ export async function fileToPageImages(file: File): Promise<string[]> {
 }
 
 /** Render every page of a PDF (or a single image) for bulk paper import. */
-export async function fileToAllPageImages(file: File, maxPages = 60): Promise<string[]> {
-  if (file.size > 20 * 1024 * 1024) throw new Error("File is too large (max 20 MB).");
+export async function fileToAllPageImages(
+  file: File,
+  maxPages = Number.POSITIVE_INFINITY,
+): Promise<string[]> {
+  if (file.size > 200 * 1024 * 1024) throw new Error("File is too large (max 200 MB).");
   if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
     return pdfToImages(file, maxPages);
   }
