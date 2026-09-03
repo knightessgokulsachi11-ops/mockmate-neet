@@ -22,7 +22,11 @@ Rules:
 - Skip incomplete questions that are cut off across the page edge.
 - correct_option: use the marked/stated answer; otherwise infer it.
 - explanation: use the printed solution if present, else write a concise 1-3 sentence solution.
-- Never leave option fields empty; describe diagrams briefly if an option is an image.
+- Never leave option fields empty; if an option is a diagram/structure, describe it in words.
+- Extract EVERY question on the pages, however many there are. Never stop early or summarise.
+- Preserve diagrams, graphs and figures by describing them inside question_text as [Figure: ...].
+- Preserve tables and matching-type questions as plain-text rows, e.g. "List I: A. X | B. Y ; List II: I. P | II. Q".
+- Preserve chemical structures and reactions as readable text (e.g. "CH3-CH2-OH + [O] -> CH3-CHO").
 - Return an empty array if the pages contain no questions.`;
 
 export interface BulkExtractedQuestion {
@@ -50,7 +54,8 @@ export async function extractManyFromImages(images: string[]): Promise<BulkExtra
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-3.7-flash",
+      max_tokens: 32000,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
