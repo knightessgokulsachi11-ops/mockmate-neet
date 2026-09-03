@@ -26,29 +26,48 @@ async function downscaleImage(dataUrl: string): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
-async function pdfToImages(file: File, maxPages = 3): Promise<string[]> {
+async function pdfToImages(file: File, maxPages = Number.POSITIVE_INFINITY): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist");
   const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
 
   const buffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+  // isEvalSupported:false keeps scanned/odd PDFs from failing under strict CSP.
+  const pdf = await pdfjs.getDocument({ data: buffer, isEvalSupported: false }).promise;
   const pages: string[] = [];
   const count = Math.min(pdf.numPages, maxPages);
+  let failures = 0;
   for (let i = 1; i <= count; i++) {
-    const page = await pdf.getPage(i);
-    const base = page.getViewport({ scale: 1 });
-    const scale = Math.min(2, MAX_EDGE / Math.max(base.width, base.height));
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) continue;
-    await page.render({ canvas, canvasContext: ctx, viewport }).promise;
-    pages.push(canvas.toDataURL("image/jpeg", 0.85));
+    try {
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({ scale: 1 });
+      // Scanned pages need a higher render scale for the OCR to be reliable.
+      const scale = Math.max(1.2, Math.min(3, SCAN_EDGE / Math.max(base.width, base.height)));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        failures++;
+        continue;
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+      pages.push(canvas.toDataURL("image/jpeg", 0.9));
+      page.cleanup();
+    } catch {
+      failures++;
+    }
   }
-  if (pages.length === 0) throw new Error("That PDF has no readable pages.");
+  if (pages.length === 0) {
+    throw new Error(
+      failures > 0
+        ? "Could not render that PDF (it may be encrypted or corrupted)."
+        : "That PDF has no pages.",
+    );
+  }
   return pages;
 }
 
