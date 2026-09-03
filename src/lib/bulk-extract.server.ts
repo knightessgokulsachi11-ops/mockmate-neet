@@ -22,7 +22,11 @@ Rules:
 - Skip incomplete questions that are cut off across the page edge.
 - correct_option: use the marked/stated answer; otherwise infer it.
 - explanation: use the printed solution if present, else write a concise 1-3 sentence solution.
-- Never leave option fields empty; describe diagrams briefly if an option is an image.
+- Never leave option fields empty; if an option is a diagram/structure, describe it in words.
+- Extract EVERY question on the pages, however many there are. Never stop early or summarise.
+- Preserve diagrams, graphs and figures by describing them inside question_text as [Figure: ...].
+- Preserve tables and matching-type questions as plain-text rows, e.g. "List I: A. X | B. Y ; List II: I. P | II. Q".
+- Preserve chemical structures and reactions as readable text (e.g. "CH3-CH2-OH + [O] -> CH3-CHO").
 - Return an empty array if the pages contain no questions.`;
 
 export interface BulkExtractedQuestion {
@@ -46,23 +50,38 @@ export async function extractManyFromImages(images: string[]): Promise<BulkExtra
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("AI is not configured for this project.");
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Extract every NEET question from these paper pages." },
-            ...images.map((url) => ({ type: "image_url", image_url: { url } })),
-          ],
-        },
-      ],
-    }),
+  const body = JSON.stringify({
+    model: "google/gemini-3.7-flash",
+    max_tokens: 32000,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Extract every NEET question from these paper pages." },
+          ...images.map((url) => ({ type: "image_url", image_url: { url } })),
+        ],
+      },
+    ],
   });
+
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body,
+    });
+    if (res.status === 429 || res.status >= 500) {
+      const retryAfter = Number(res.headers.get("retry-after")) || 0;
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, Math.max(retryAfter * 1000, 1500 * (attempt + 1))));
+        continue;
+      }
+    }
+    break;
+  }
+  if (!res) throw new Error("AI extraction failed.");
 
   if (res.status === 429) throw new Error("AI rate limit reached. Please try again shortly.");
   if (res.status === 402) throw new Error("AI credits exhausted. Please top up to continue.");

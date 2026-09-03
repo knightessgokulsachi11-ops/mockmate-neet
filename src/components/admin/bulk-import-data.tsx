@@ -27,7 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const PAGES_PER_BATCH = 2;
+const PAGES_PER_BATCH = 1;
 
 export function BulkImportData() {
   const qc = useQueryClient();

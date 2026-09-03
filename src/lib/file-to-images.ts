@@ -1,6 +1,7 @@
 /** Browser-only helpers: turn an uploaded image or PDF into data-URL page images. */
 
 const MAX_EDGE = 1600;
+const SCAN_EDGE = 2400;
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -26,7 +27,7 @@ async function downscaleImage(dataUrl: string): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
-async function pdfToImages(file: File, maxPages = 3): Promise<string[]> {
+async function pdfToImages(file: File, maxPages = Number.POSITIVE_INFINITY): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist");
   const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
@@ -35,20 +36,38 @@ async function pdfToImages(file: File, maxPages = 3): Promise<string[]> {
   const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const pages: string[] = [];
   const count = Math.min(pdf.numPages, maxPages);
+  let failures = 0;
   for (let i = 1; i <= count; i++) {
-    const page = await pdf.getPage(i);
-    const base = page.getViewport({ scale: 1 });
-    const scale = Math.min(2, MAX_EDGE / Math.max(base.width, base.height));
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) continue;
-    await page.render({ canvas, canvasContext: ctx, viewport }).promise;
-    pages.push(canvas.toDataURL("image/jpeg", 0.85));
+    try {
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({ scale: 1 });
+      // Scanned pages need a higher render scale for the OCR to be reliable.
+      const scale = Math.max(1.2, Math.min(3, SCAN_EDGE / Math.max(base.width, base.height)));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        failures++;
+        continue;
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+      pages.push(canvas.toDataURL("image/jpeg", 0.9));
+      page.cleanup();
+    } catch {
+      failures++;
+    }
   }
-  if (pages.length === 0) throw new Error("That PDF has no readable pages.");
+  if (pages.length === 0) {
+    throw new Error(
+      failures > 0
+        ? "Could not render that PDF (it may be encrypted or corrupted)."
+        : "That PDF has no pages.",
+    );
+  }
   return pages;
 }
 
@@ -62,8 +81,11 @@ export async function fileToPageImages(file: File): Promise<string[]> {
 }
 
 /** Render every page of a PDF (or a single image) for bulk paper import. */
-export async function fileToAllPageImages(file: File, maxPages = 60): Promise<string[]> {
-  if (file.size > 20 * 1024 * 1024) throw new Error("File is too large (max 20 MB).");
+export async function fileToAllPageImages(
+  file: File,
+  maxPages = Number.POSITIVE_INFINITY,
+): Promise<string[]> {
+  if (file.size > 200 * 1024 * 1024) throw new Error("File is too large (max 200 MB).");
   if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
     return pdfToImages(file, maxPages);
   }
