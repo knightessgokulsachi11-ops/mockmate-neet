@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { FileStack, Loader2, Upload } from "lucide-react";
 import { extractQuestionBatch } from "@/lib/bulk-extract.functions";
-import { fileToAllPageImages } from "@/lib/file-to-images";
+import { loadFilePages } from "@/lib/page-extract";
+import { parseQuestionsFromText } from "@/lib/parse-questions";
 import {
   guessChapter,
   guessDifficulty,
