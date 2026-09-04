@@ -63,6 +63,27 @@ export function BulkImportData() {
     setStatus("");
   }
 
+  function toRow(q: RawQuestion): QuestionInput {
+    const blob = `${q.question_text} ${q.option_a} ${q.option_b} ${q.option_c} ${q.option_d} ${q.chapter ?? ""} ${q.major_topic ?? ""}`;
+    const subject = normaliseSubject(q.subject ?? null) ?? guessSubject(blob);
+    const guessed = guessChapter(blob, subject);
+    return {
+      subject,
+      chapter: q.chapter || guessed.chapter,
+      major_topic: q.major_topic || guessed.topic,
+      difficulty: normaliseDifficulty(q.difficulty ?? null) ?? guessDifficulty(blob),
+      is_pyq: q.is_pyq || markPyq,
+      question_text: q.question_text,
+      image_url: null,
+      option_a: q.option_a,
+      option_b: q.option_b,
+      option_c: q.option_c,
+      option_d: q.option_d,
+      correct_answer: OPTION_KEYS[(q.correct_option ?? 1) - 1],
+      explanation: q.explanation,
+    } as unknown as QuestionInput;
+  }
+
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -73,54 +94,47 @@ export function BulkImportData() {
     const problems: string[] = [];
 
     try {
-      // Render every page of every file first so total progress is accurate.
-      const pages: { file: string; image: string }[] = [];
+      // Open every file first (page counts only) so progress is accurate.
+      const loaded: { name: string; doc: Awaited<ReturnType<typeof loadFilePages>> }[] = [];
       for (const file of files) {
-        setStatus(`Rendering ${file.name}…`);
+        setStatus(`Opening ${file.name}…`);
         try {
-          const imgs = await fileToAllPageImages(file);
-          imgs.forEach((image) => pages.push({ file: file.name, image }));
+          const doc = await loadFilePages(file);
+          if (doc.total > 0) loaded.push({ name: file.name, doc });
+          else problems.push(`${file.name}: no pages found.`);
         } catch (err) {
           problems.push(`${file.name}: ${err instanceof Error ? err.message : "unreadable"}`);
         }
       }
-      if (!pages.length) throw new Error("No readable pages in the selected files.");
+      const totalPages = loaded.reduce((n, l) => n + l.doc.total, 0);
+      if (!totalPages) throw new Error("No readable pages in the selected files.");
 
-      const batches = Math.ceil(pages.length / PAGES_PER_BATCH);
-      for (let b = 0; b < batches; b++) {
-        const slice = pages.slice(b * PAGES_PER_BATCH, (b + 1) * PAGES_PER_BATCH);
-        setStatus(
-          `Reading pages ${b * PAGES_PER_BATCH + 1}–${b * PAGES_PER_BATCH + slice.length} of ${pages.length}…`,
-        );
-        try {
-          const extracted = await runBatch({ data: { images: slice.map((p) => p.image) } });
-          for (const q of extracted) {
-            const blob = `${q.question_text} ${q.option_a} ${q.option_b} ${q.option_c} ${q.option_d} ${q.chapter} ${q.major_topic}`;
-            const subject = normaliseSubject(q.subject) ?? guessSubject(blob);
-            const guessed = guessChapter(blob, subject);
-            collected.push({
-              subject,
-              chapter: q.chapter || guessed.chapter,
-              major_topic: q.major_topic || guessed.topic,
-              difficulty: normaliseDifficulty(q.difficulty) ?? guessDifficulty(blob),
-              is_pyq: q.is_pyq || markPyq,
-              question_text: q.question_text,
-              image_url: null,
-              option_a: q.option_a,
-              option_b: q.option_b,
-              option_c: q.option_c,
-              option_d: q.option_d,
-              correct_answer: OPTION_KEYS[(q.correct_option ?? 1) - 1],
-              explanation: q.explanation,
-            } as unknown as QuestionInput);
+      let done = 0;
+      for (const { name, doc } of loaded) {
+        for (let i = 0; i < doc.total; i++) {
+          setStatus(`Reading page ${done + 1} of ${totalPages}…`);
+          try {
+            const unit = await doc.get(i);
+            const parsed = parseQuestionsFromText(unit.text);
+            if (!parsed.needsAi && parsed.questions.length) {
+              // OCR / text-layer extraction was reliable — no AI needed.
+              parsed.questions.forEach((q) => collected.push(toRow(q)));
+            } else {
+              // Complex or unreliable page: let AI read the rendered page image.
+              const image = await unit.getImage();
+              const extracted = await runBatch({ data: { images: [image] } });
+              extracted.forEach((q) => collected.push(toRow(q as RawQuestion)));
+            }
+          } catch (err) {
+            problems.push(
+              `${name}: page ${i + 1} failed — ${err instanceof Error ? err.message : "read error"}`,
+            );
           }
-        } catch (err) {
-          problems.push(
-            `${slice[0]?.file ?? "file"}: batch ${b + 1} failed — ${err instanceof Error ? err.message : "AI error"}`,
-          );
+          done++;
+          setProgress(Math.round((done / totalPages) * 100));
+          setRows([...collected]);
         }
-        setProgress(Math.round(((b + 1) / batches) * 100));
-        setRows([...collected]);
+        doc.close();
       }
 
       setIssues(problems.slice(0, 50));
