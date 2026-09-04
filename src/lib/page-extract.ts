@@ -129,7 +129,7 @@ export async function loadFilePages(file: File): Promise<LoadedFile> {
     total: pdf.numPages,
     close: () => {
       try {
-        void pdf.destroy();
+        void (pdf as unknown as { cleanup?: () => void }).cleanup?.();
       } catch {
         /* ignore */
       }
