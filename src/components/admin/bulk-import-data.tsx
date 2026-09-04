@@ -28,7 +28,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const PAGES_PER_BATCH = 1;
+interface RawQuestion {
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_option: 1 | 2 | 3 | 4 | null;
+  explanation: string;
+  subject?: string | null;
+  chapter?: string;
+  major_topic?: string;
+  difficulty?: string | null;
+  is_pyq?: boolean;
+}
 
 export function BulkImportData() {
   const qc = useQueryClient();
