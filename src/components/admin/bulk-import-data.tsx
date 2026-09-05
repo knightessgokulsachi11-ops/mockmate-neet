@@ -3,15 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { FileStack, Loader2, Upload } from "lucide-react";
-import { extractQuestionBatch } from "@/lib/bulk-extract.functions";
-import { loadFilePages } from "@/lib/page-extract";
-import { parseQuestionsFromText } from "@/lib/parse-questions";
+import { resolveMissingAnswers } from "@/lib/answer-ai.functions";
+import { loadFilePages, type PageUnit } from "@/lib/page-extract";
+import { parseQuestionsFromText, type ParsedQuestion } from "@/lib/parse-questions";
+import { parseAnswerKey } from "@/lib/answer-key";
 import {
   guessChapter,
   guessDifficulty,
   guessSubject,
-  normaliseDifficulty,
-  normaliseSubject,
 } from "@/lib/categorize";
 import { OPTION_KEYS } from "@/lib/neet";
 import { insertQuestionsChunked, type QuestionInput } from "@/lib/questions";
@@ -28,19 +27,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-interface RawQuestion {
-  question_text: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_option: 1 | 2 | 3 | 4 | null;
-  explanation: string;
-  subject?: string | null;
-  chapter?: string;
-  major_topic?: string;
-  difficulty?: string | null;
-  is_pyq?: boolean;
+interface Pending extends ParsedQuestion {
+  page: number;
+  file: string;
+  image: string | null;
 }
 
 export function BulkImportData() {
@@ -54,7 +44,7 @@ export function BulkImportData() {
   const [issues, setIssues] = useState<string[]>([]);
   const [markPyq, setMarkPyq] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
-  const runBatch = useServerFn(extractQuestionBatch);
+  const askAi = useServerFn(resolveMissingAnswers);
 
   function reset() {
     setRows([]);
@@ -63,25 +53,49 @@ export function BulkImportData() {
     setStatus("");
   }
 
-  function toRow(q: RawQuestion): QuestionInput {
-    const blob = `${q.question_text} ${q.option_a} ${q.option_b} ${q.option_c} ${q.option_d} ${q.chapter ?? ""} ${q.major_topic ?? ""}`;
-    const subject = normaliseSubject(q.subject ?? null) ?? guessSubject(blob);
+  function toRow(q: Pending, correct: 1 | 2 | 3 | 4, explanation: string): QuestionInput {
+    const blob = `${q.question_text} ${q.option_a} ${q.option_b} ${q.option_c} ${q.option_d}`;
+    const subject = guessSubject(blob);
     const guessed = guessChapter(blob, subject);
     return {
       subject,
-      chapter: q.chapter || guessed.chapter,
-      major_topic: q.major_topic || guessed.topic,
-      difficulty: normaliseDifficulty(q.difficulty ?? null) ?? guessDifficulty(blob),
-      is_pyq: q.is_pyq || markPyq,
+      chapter: guessed.chapter,
+      major_topic: guessed.topic,
+      difficulty: guessDifficulty(blob),
+      is_pyq: markPyq,
       question_text: q.question_text,
-      image_url: null,
+      image_url: q.image ?? null,
       option_a: q.option_a,
       option_b: q.option_b,
       option_c: q.option_c,
       option_d: q.option_d,
-      correct_answer: OPTION_KEYS[(q.correct_option ?? 1) - 1],
-      explanation: q.explanation,
+      correct_answer: OPTION_KEYS[correct - 1],
+      explanation: explanation,
     } as unknown as QuestionInput;
+  }
+
+  /** Crop the printed visual for a question out of its rendered page. */
+  async function visualFor(unit: PageUnit, localOffset: number, nextOffset: number | null) {
+    try {
+      if (!unit.lines.length) return await unit.getImage();
+      // Map character offsets in the page text onto line positions.
+      let cursor = 0;
+      let top = 0;
+      let bottom = 1;
+      for (let i = 0; i < unit.lines.length; i++) {
+        const line = unit.lines[i]!;
+        const start = cursor;
+        cursor += line.text.length + 1;
+        if (start <= localOffset && localOffset < cursor) top = Math.max(0, line.y - 0.01);
+        if (nextOffset !== null && start <= nextOffset && nextOffset < cursor) {
+          bottom = Math.min(1, line.y);
+        }
+      }
+      if (bottom <= top) bottom = 1;
+      return await unit.cropImage(top, bottom);
+    } catch {
+      return null;
+    }
   }
 
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -94,7 +108,6 @@ export function BulkImportData() {
     const problems: string[] = [];
 
     try {
-      // Open every file first (page counts only) so progress is accurate.
       const loaded: { name: string; doc: Awaited<ReturnType<typeof loadFilePages>> }[] = [];
       for (const file of files) {
         setStatus(`Opening ${file.name}…`);
@@ -110,33 +123,115 @@ export function BulkImportData() {
       if (!totalPages) throw new Error("No readable pages in the selected files.");
 
       let done = 0;
+      const pending: Pending[] = [];
+
       for (const { name, doc } of loaded) {
+        // 1. Read every page with the right method (text layer or OCR).
+        const units: PageUnit[] = [];
+        const starts: number[] = [];
+        let fullText = "";
         for (let i = 0; i < doc.total; i++) {
           setStatus(`Reading page ${done + 1} of ${totalPages}…`);
           try {
             const unit = await doc.get(i);
-            const parsed = parseQuestionsFromText(unit.text);
-            if (!parsed.needsAi && parsed.questions.length) {
-              // OCR / text-layer extraction was reliable — no AI needed.
-              parsed.questions.forEach((q) => collected.push(toRow(q)));
-            } else {
-              // Complex or unreliable page: let AI read the rendered page image.
-              const image = await unit.getImage();
-              const extracted = await runBatch({ data: { images: [image] } });
-              extracted.forEach((q) => collected.push(toRow(q as RawQuestion)));
-            }
+            units.push(unit);
+            starts.push(fullText.length);
+            fullText += `${unit.text}\n`;
           } catch (err) {
             problems.push(
               `${name}: page ${i + 1} failed — ${err instanceof Error ? err.message : "read error"}`,
             );
           }
           done++;
-          setProgress(Math.round((done / totalPages) * 100));
-          setRows([...collected]);
+          setProgress(Math.round((done / totalPages) * 90));
+        }
+
+        // 2. Answer key can live on any page — scan the whole document.
+        const key = parseAnswerKey(fullText);
+
+        // 3. Parse questions from the whole document text.
+        const parsed = parseQuestionsFromText(fullText);
+        if (parsed.failed) {
+          problems.push(`${name}: ${parsed.failed} block(s) could not be parsed and were skipped.`);
+        }
+
+        for (let qi = 0; qi < parsed.questions.length; qi++) {
+          const q = parsed.questions[qi]!;
+          let pageIdx = 0;
+          for (let s = 0; s < starts.length; s++) if (q.offset >= starts[s]!) pageIdx = s;
+          const unit = units[pageIdx];
+          let image: string | null = null;
+          if (q.hasVisual && unit) {
+            const next = parsed.questions[qi + 1];
+            const nextLocal =
+              next && next.offset >= starts[pageIdx]! && next.offset < starts[pageIdx]! + unit.text.length + 1
+                ? next.offset - starts[pageIdx]!
+                : null;
+            image = await visualFor(unit, q.offset - starts[pageIdx]!, nextLocal);
+          }
+          pending.push({
+            ...q,
+            page: unit?.page ?? pageIdx + 1,
+            file: name,
+            image,
+            correct_option: q.correct_option ?? (q.number ? (key.get(q.number) ?? null) : null),
+          });
         }
         doc.close();
       }
 
+      // 4. AI is used only for questions whose answer is nowhere in the PDF.
+      const missing = pending.filter((p) => !p.correct_option);
+      if (missing.length) {
+        setStatus(`Finding ${missing.length} missing answer(s)…`);
+        const BATCH = 10;
+        for (let i = 0; i < missing.length; i += BATCH) {
+          const batch = missing.slice(i, i + BATCH);
+          try {
+            const answers = await askAi({
+              data: {
+                questions: batch.map((q, n) => ({
+                  id: i + n,
+                  question_text: q.question_text,
+                  option_a: q.option_a,
+                  option_b: q.option_b,
+                  option_c: q.option_c,
+                  option_d: q.option_d,
+                })),
+              },
+            });
+            for (const a of answers) {
+              const target = missing[a.id];
+              if (!target) continue;
+              target.correct_option = a.correct_option;
+              if (!target.explanation && a.explanation) target.explanation = a.explanation;
+            }
+          } catch (err) {
+            problems.push(
+              `Answer lookup failed — ${err instanceof Error ? err.message : "AI error"}`,
+            );
+            break;
+          }
+          setProgress(90 + Math.round(((i + batch.length) / missing.length) * 10));
+        }
+      }
+
+      let unresolved = 0;
+      for (const q of pending) {
+        if (!q.correct_option) {
+          unresolved++;
+          continue;
+        }
+        collected.push(toRow(q, q.correct_option, q.explanation));
+      }
+      if (unresolved) {
+        problems.push(
+          `${unresolved} question(s) had no answer in the PDF and none could be determined — skipped.`,
+        );
+      }
+
+      setRows(collected);
+      setProgress(100);
       setIssues(problems.slice(0, 50));
       setStatus(
         collected.length
@@ -152,6 +247,7 @@ export function BulkImportData() {
       setBusy(false);
     }
   }
+
 
   async function runImport() {
     setImporting(true);

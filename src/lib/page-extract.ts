@@ -1,9 +1,9 @@
 /**
  * Browser-only page reader for bulk import.
- * Strategy per page:
- *  1. Text-based PDF page  -> direct text-layer extraction (no OCR, no AI).
+ * Strategy per page (no AI at any point):
+ *  1. Text-based PDF page  -> direct text-layer extraction.
  *  2. Scanned PDF page / image -> OCR (Tesseract).
- *  3. AI is used only later, when the extracted text cannot be parsed reliably.
+ * A single PDF may mix both kinds; each page is decided independently.
  */
 import { ocrImage } from "./ocr";
 
@@ -12,13 +12,23 @@ const SCAN_EDGE = 2400;
 /** Below this many characters a PDF page is treated as scanned (image-only). */
 const TEXT_LAYER_MIN_CHARS = 180;
 
+export interface TextLine {
+  /** Vertical position as a fraction of the page height (0 = top). */
+  y: number;
+  text: string;
+}
+
 export interface PageUnit {
   file: string;
   page: number;
   text: string;
   source: "text" | "ocr";
-  /** Rendered page image (data URL), used only when AI fallback is needed. */
+  /** Line positions (text pages only) — used to crop a question's visual. */
+  lines: TextLine[];
+  /** Rendered page image (data URL). */
   getImage: () => Promise<string>;
+  /** Crop of the rendered page between two height fractions. */
+  cropImage: (top: number, bottom: number) => Promise<string>;
 }
 
 export interface LoadedFile {
@@ -51,6 +61,32 @@ async function downscaleImage(dataUrl: string): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
+/** Crop a data-URL image vertically (fractions of its height). */
+export async function cropDataUrl(
+  dataUrl: string,
+  top: number,
+  bottom: number,
+  maxWidth = 900,
+): Promise<string> {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+  const t = Math.max(0, Math.min(1, top));
+  const b = Math.max(t + 0.02, Math.min(1, bottom));
+  const sy = Math.floor(img.height * t);
+  const sh = Math.max(24, Math.ceil(img.height * (b - t)));
+  const scale = Math.min(1, maxWidth / img.width);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(img.width * scale));
+  canvas.height = Math.max(1, Math.round(sh * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return dataUrl;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, sy, img.width, sh, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.72);
+}
+
 async function loadPdf(file: File) {
   const pdfjs = await import("pdfjs-dist");
   const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
@@ -62,26 +98,28 @@ async function loadPdf(file: File) {
 type PdfDoc = Awaited<ReturnType<typeof loadPdf>>;
 type PdfPage = Awaited<ReturnType<PdfDoc["getPage"]>>;
 
-async function pageText(page: PdfPage): Promise<string> {
+async function pageLines(page: PdfPage): Promise<TextLine[]> {
   try {
     const content = await page.getTextContent();
-    const lines = new Map<number, string[]>();
+    const height = page.getViewport({ scale: 1 }).height || 1;
+    const buckets = new Map<number, string[]>();
     for (const item of content.items) {
       const it = item as { str?: string; transform?: number[] };
       if (!it.str || !it.transform) continue;
       const y = Math.round(it.transform[5] ?? 0);
-      const bucket = lines.get(y) ?? [];
+      const bucket = buckets.get(y) ?? [];
       bucket.push(it.str);
-      lines.set(y, bucket);
+      buckets.set(y, bucket);
     }
-    return [...lines.entries()]
+    return [...buckets.entries()]
       .sort((a, b) => b[0] - a[0])
-      .map(([, parts]) => parts.join(" ").replace(/\s+/g, " ").trim())
-      .filter(Boolean)
-      .join("\n")
-      .trim();
+      .map(([y, parts]) => ({
+        y: Math.max(0, Math.min(1, 1 - y / height)),
+        text: parts.join(" ").replace(/\s+/g, " ").trim(),
+      }))
+      .filter((l) => l.text.length > 0);
   } catch {
-    return "";
+    return [];
   }
 }
 
@@ -101,7 +139,7 @@ async function renderPage(page: PdfPage): Promise<string> {
 }
 
 export async function loadFilePages(file: File): Promise<LoadedFile> {
-  if (file.size > 200 * 1024 * 1024) throw new Error("File is too large (max 200 MB).");
+  if (file.size > 500 * 1024 * 1024) throw new Error("File is too large (max 500 MB).");
   const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
   if (!isPdf) {
@@ -118,7 +156,10 @@ export async function loadFilePages(file: File): Promise<LoadedFile> {
           page: 1,
           text: await ocrImage(img),
           source: "ocr" as const,
+          lines: [],
           getImage: image,
+          cropImage: async (top: number, bottom: number) =>
+            cropDataUrl(await image(), top, bottom),
         };
       },
     };
@@ -138,9 +179,21 @@ export async function loadFilePages(file: File): Promise<LoadedFile> {
       const page = await pdf.getPage(index + 1);
       let rendered: string | null = null;
       const getImage = async () => (rendered ??= await renderPage(page));
-      const text = await pageText(page);
+      const cropImage = async (top: number, bottom: number) =>
+        cropDataUrl(await getImage(), top, bottom);
+
+      const lines = await pageLines(page);
+      const text = lines.map((l) => l.text).join("\n").trim();
       if (text.length >= TEXT_LAYER_MIN_CHARS) {
-        return { file: file.name, page: index + 1, text, source: "text" as const, getImage };
+        return {
+          file: file.name,
+          page: index + 1,
+          text,
+          source: "text" as const,
+          lines,
+          getImage,
+          cropImage,
+        };
       }
       // Scanned / image-only page: OCR it.
       const img = await getImage();
@@ -150,7 +203,9 @@ export async function loadFilePages(file: File): Promise<LoadedFile> {
         page: index + 1,
         text: ocr.length > text.length ? ocr : text,
         source: "ocr" as const,
+        lines: [],
         getImage,
+        cropImage,
       };
     },
   };
